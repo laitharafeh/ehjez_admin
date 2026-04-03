@@ -157,13 +157,11 @@ class _SettingsFormState extends State<_SettingsForm> {
   String _formatTimeOfDay(TimeOfDay t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:00';
 
-  // ── Time picker ─────────────────────────────────────────────────────────────
-
   Future<void> _pickTime({required bool isStart}) async {
     final picked = await showTimePicker(
       context: context,
       initialTime: isStart ? _startTime : _endTime,
-      initialEntryMode: TimePickerEntryMode.input,
+      initialEntryMode: TimePickerEntryMode.inputOnly,
     );
     if (picked == null) return;
     setState(() {
@@ -873,6 +871,7 @@ class _SettingsFormState extends State<_SettingsForm> {
       ),
     );
   }
+
 
   Widget _timeTile({
     required String label,
