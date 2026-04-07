@@ -1,4 +1,5 @@
 import 'package:ehjez_admin/constants.dart';
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -19,9 +20,10 @@ class _OtpScreenState extends State<OtpScreen> {
   String? _error;
 
   Future<void> _verify() async {
+    final s = S.of(context);
     final code = _otpController.text.trim();
     if (code.isEmpty) {
-      setState(() => _error = 'Please enter the code.');
+      setState(() => _error = s.pleaseEnterCode);
       return;
     }
     setState(() {
@@ -39,11 +41,11 @@ class _OtpScreenState extends State<OtpScreen> {
         if (!mounted) return;
         context.go('/');
       } else {
-        setState(() => _error = 'Invalid code. Please try again.');
+        setState(() => _error = S.of(context).invalidCode);
       }
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'Invalid code. Please try again.');
+      setState(() => _error = S.of(context).invalidCode);
     } finally {
       if (mounted) setState(() => _isVerifying = false);
     }
@@ -58,11 +60,11 @@ class _OtpScreenState extends State<OtpScreen> {
       await AuthService.signInWithOtp(widget.phoneNumber);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Code resent.')),
+        SnackBar(content: Text(S.of(context).codeResent)),
       );
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'Failed to resend. Please go back and try again.');
+      setState(() => _error = S.of(context).resendFailed);
     } finally {
       if (mounted) setState(() => _isResending = false);
     }
@@ -76,6 +78,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
       body: Center(
@@ -86,7 +89,6 @@ class _OtpScreenState extends State<OtpScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ── Logo ──────────────────────────────────────────────────
                 Text(
                   'ehjez',
                   style: GoogleFonts.grandstander(
@@ -98,7 +100,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Admin Portal',
+                  s.adminPortal,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -106,10 +108,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     letterSpacing: 1.5,
                   ),
                 ),
-
                 const SizedBox(height: 40),
-
-                // ── Card ──────────────────────────────────────────────────
                 Container(
                   padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
@@ -126,9 +125,9 @@ class _OtpScreenState extends State<OtpScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
-                        'Verify your number',
-                        style: TextStyle(
+                      Text(
+                        s.verifyYourNumber,
+                        style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
@@ -136,15 +135,13 @@ class _OtpScreenState extends State<OtpScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Code sent to ${widget.phoneNumber}',
+                        s.codeSentTo(widget.phoneNumber),
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey.shade600,
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // OTP field
                       TextField(
                         controller: _otpController,
                         keyboardType: TextInputType.number,
@@ -200,10 +197,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 20),
-
-                      // Verify button
                       SizedBox(
                         height: 48,
                         child: ElevatedButton(
@@ -227,26 +221,23 @@ class _OtpScreenState extends State<OtpScreen> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text(
-                                  'Verify',
-                                  style: TextStyle(
+                              : Text(
+                                  s.verify,
+                                  style: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                         ),
                       ),
-
                       const SizedBox(height: 16),
-
-                      // Resend + back
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           TextButton(
                             onPressed: () => context.pop(),
                             child: Text(
-                              'Change number',
+                              s.changeNumber,
                               style: TextStyle(
                                 color: Colors.grey.shade600,
                                 fontSize: 13,
@@ -256,7 +247,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           TextButton(
                             onPressed: _isResending ? null : _resend,
                             child: Text(
-                              _isResending ? 'Sending...' : 'Resend code',
+                              _isResending ? s.sending : s.resendCode,
                               style: TextStyle(
                                 color: ehjezGreen,
                                 fontSize: 13,

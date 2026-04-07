@@ -1,4 +1,5 @@
 import 'package:ehjez_admin/constants.dart';
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,7 +32,7 @@ class _VacationDaysScreenState extends ConsumerState<VacationDaysScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating vacation days: $e')),
+          SnackBar(content: Text(S.of(context).errorUpdatingVacation('$e'))),
         );
       }
     } finally {
@@ -42,26 +43,27 @@ class _VacationDaysScreenState extends ConsumerState<VacationDaysScreen> {
   Future<void> _clearAll(Set<DateTime> current) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Clear all vacation days?'),
-        content: const Text(
-          'This will remove all vacation days and allow bookings on all dates.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-              foregroundColor: Colors.white,
+      builder: (ctx) {
+        final s = S.of(ctx);
+        return AlertDialog(
+          title: Text(s.clearAllTitle),
+          content: Text(s.clearAllBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(s.cancel),
             ),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Clear All'),
-          ),
-        ],
-      ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(s.clearAll),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true) return;
 
@@ -73,7 +75,7 @@ class _VacationDaysScreenState extends ConsumerState<VacationDaysScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error clearing vacation days: $e')),
+          SnackBar(content: Text(S.of(context).errorClearingVacation('$e'))),
         );
       }
     } finally {
@@ -87,19 +89,17 @@ class _VacationDaysScreenState extends ConsumerState<VacationDaysScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Vacation Days'),
+        title: Text(S.of(context).vacationDays),
         actions: [
           vacationAsync.whenData((days) => days).valueOrNull?.isNotEmpty == true
               ? TextButton.icon(
                   onPressed: _isSaving
                       ? null
-                      : () => _clearAll(
-                            vacationAsync.valueOrNull ?? {},
-                          ),
+                      : () => _clearAll(vacationAsync.valueOrNull ?? {}),
                   icon: const Icon(Icons.clear_all, color: Colors.redAccent),
-                  label: const Text(
-                    'Clear All',
-                    style: TextStyle(color: Colors.redAccent),
+                  label: Text(
+                    S.of(context).clearAll,
+                    style: const TextStyle(color: Colors.redAccent),
                   ),
                 )
               : const SizedBox.shrink(),
@@ -131,8 +131,7 @@ class _VacationDaysScreenState extends ConsumerState<VacationDaysScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Tap any date to mark it as a vacation day. '
-                      'Users will not be able to book on those days.',
+                      S.of(context).tapDateToMarkVacation,
                       style:
                           TextStyle(color: Colors.orange.shade800, fontSize: 13),
                     ),
@@ -150,12 +149,12 @@ class _VacationDaysScreenState extends ConsumerState<VacationDaysScreen> {
                 children: [
                   _legendDot(Colors.red.shade300),
                   const SizedBox(width: 6),
-                  const Text('Vacation / Closed',
-                      style: TextStyle(fontSize: 12)),
+                  Text(S.of(context).vacationClosed,
+                      style: const TextStyle(fontSize: 12)),
                   const SizedBox(width: 16),
                   _legendDot(ehjezGreen),
                   const SizedBox(width: 6),
-                  const Text('Today', style: TextStyle(fontSize: 12)),
+                  Text(S.of(context).today, style: const TextStyle(fontSize: 12)),
                 ],
               ),
             ),
@@ -207,12 +206,12 @@ class _VacationDaysScreenState extends ConsumerState<VacationDaysScreen> {
                               size: 48, color: Colors.grey.shade300),
                           const SizedBox(height: 12),
                           Text(
-                            'No vacation days set.',
+                            S.of(context).noVacationDays,
                             style: TextStyle(
                                 color: Colors.grey.shade500, fontSize: 15),
                           ),
                           Text(
-                            'Tap a date on the calendar above to close it.',
+                            S.of(context).tapDateToClose,
                             style: TextStyle(
                                 color: Colors.grey.shade400, fontSize: 12),
                           ),
@@ -224,7 +223,7 @@ class _VacationDaysScreenState extends ConsumerState<VacationDaysScreen> {
                           horizontal: 16, vertical: 8),
                       children: [
                         Text(
-                          '${vacationDays.length} vacation day${vacationDays.length > 1 ? 's' : ''} set',
+                          S.of(context).vacationDaysCount(vacationDays.length),
                           style: TextStyle(
                               fontSize: 13,
                               color: Colors.grey.shade600,
@@ -253,7 +252,7 @@ class _VacationDaysScreenState extends ConsumerState<VacationDaysScreen> {
                                   color: Colors.grey.shade400, size: 18),
                               onPressed:
                                   _isSaving ? null : () => _toggleDay(day),
-                              tooltip: 'Remove',
+                              tooltip: S.of(context).remove,
                             ),
                           );
                         }),

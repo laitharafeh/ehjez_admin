@@ -5,6 +5,10 @@ import 'package:ehjez_admin/services/strike_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+// ─── Language ─────────────────────────────────────────────────────────────────
+
+final languageProvider = StateProvider<String>((ref) => 'en');
+
 // ─── Auth ──────────────────────────────────────────────────────────────────────
 
 final authStateProvider = StreamProvider<AuthState>((ref) {

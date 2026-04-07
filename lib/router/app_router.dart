@@ -11,7 +11,6 @@ import '../screens/reservations_screen.dart';
 import '../screens/accounting_screen.dart';
 import '../screens/vacation_days_screen.dart';
 import '../screens/analytics_screen.dart';
-import '../screens/blacklist_screen.dart';
 import '../screens/court_settings_screen.dart';
 
 // Bridges Supabase's auth stream into go_router's refreshListenable so that
@@ -82,10 +81,6 @@ final appRouter = GoRouter(
       builder: (context, state) => AnalyticsScreen(
         courtId: state.pathParameters['courtId']!,
       ),
-    ),
-    GoRoute(
-      path: '/blacklist',
-      builder: (context, state) => const BlacklistScreen(),
     ),
     GoRoute(
       path: '/settings/:courtId',

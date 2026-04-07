@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 typedef StrikeEntry = ({
@@ -19,6 +20,7 @@ class StrikeService {
   // ─── Strikes ──────────────────────────────────────────────────────────────
 
   /// Adds a no-show strike for [phone]. Returns the new active strike count.
+  /// Also fires a push notification to the user (fire-and-forget).
   static Future<int> addStrike({
     required String phone,
     required String courtId,
@@ -29,7 +31,29 @@ class StrikeService {
       'court_id': courtId,
       if (reservationId != null) 'reservation_id': reservationId,
     });
-    return getActiveStrikeCount(phone);
+    final newCount = await getActiveStrikeCount(phone);
+    final strikesLeft = (5 - newCount).clamp(0, 5);
+    // Fire-and-forget — notification delivery never blocks the admin UI.
+    _notifyUser(phone: phone, strikesLeft: strikesLeft);
+    return newCount;
+  }
+
+  /// Calls the `notify-strike` edge function without awaiting its result.
+  /// Uses async/try-catch instead of .catchError() — more reliable on Flutter web.
+  static Future<void> _notifyUser({
+    required String phone,
+    required int strikesLeft,
+  }) async {
+    try {
+      await _client.functions.invoke(
+        'notify-strike',
+        body: {'phone': phone, 'strikesLeft': strikesLeft},
+      );
+    } catch (e) {
+      // Notification failure is never surfaced to the admin and never
+      // prevents the strike from being recorded.
+      debugPrint('[notify-strike] failed (non-fatal): $e');
+    }
   }
 
   /// Returns how many strikes [phone] has in the last 6 months.

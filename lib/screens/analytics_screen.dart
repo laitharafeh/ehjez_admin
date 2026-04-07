@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:ehjez_admin/constants.dart';
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:ehjez_admin/services/reservation_service.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ class AnalyticsScreen extends ConsumerWidget {
     final dataAsync = ref.watch(analyticsProvider(courtId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Analytics')),
+      appBar: AppBar(title: Text(S.of(context).analytics)),
       body: dataAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -36,6 +37,7 @@ class _AnalyticsBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = data.summary;
+    final str = S.of(context);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -43,34 +45,34 @@ class _AnalyticsBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Summary cards ──────────────────────────────────────────────────
-          _sectionTitle('Summary'),
+          _sectionTitle(str.summary),
           const SizedBox(height: 12),
           Wrap(
             spacing: 12,
             runSpacing: 12,
             children: [
               _StatCard(
-                label: 'This Month',
+                label: str.thisMonth,
                 value: '${s.monthRevenue.toStringAsFixed(0)} JOD',
-                sub: '${s.monthBookings} bookings',
+                sub: '${s.monthBookings} ${str.bookingsLabel}',
                 color: ehjezGreen,
               ),
               _StatCard(
-                label: 'All-time Revenue',
+                label: str.allTimeRevenue,
                 value: '${s.totalRevenue.toStringAsFixed(0)} JOD',
-                sub: '${s.totalBookings} total bookings',
+                sub: '${s.totalBookings} ${str.totalBookings}',
                 color: const Color(0xFF1565C0),
               ),
               _StatCard(
-                label: 'Avg Booking Value',
+                label: str.avgBookingValue,
                 value: '${s.avgBookingValue.toStringAsFixed(2)} JOD',
-                sub: 'per reservation',
+                sub: str.perReservation,
                 color: const Color(0xFFF57F17),
               ),
               _StatCard(
-                label: 'Total Commission',
+                label: str.totalCommission,
                 value: '${s.totalCommission.toStringAsFixed(2)} JOD',
-                sub: 'all time',
+                sub: str.allTime,
                 color: const Color(0xFF880E4F),
               ),
             ],
@@ -80,7 +82,7 @@ class _AnalyticsBody extends StatelessWidget {
 
           // ── Monthly revenue ────────────────────────────────────────────────
           if (data.monthlyRevenue.isNotEmpty) ...[
-            _sectionTitle('Monthly Revenue (JOD)'),
+            _sectionTitle(str.monthlyRevenueJod),
             const SizedBox(height: 16),
             _BarChart(
               bars: data.monthlyRevenue
@@ -98,10 +100,10 @@ class _AnalyticsBody extends StatelessWidget {
 
           // ── Peak hours ─────────────────────────────────────────────────────
           if (data.peakHours.isNotEmpty) ...[
-            _sectionTitle('Peak Hours'),
+            _sectionTitle(str.peakHours),
             const SizedBox(height: 4),
             Text(
-              'Number of bookings per hour of day',
+              str.bookingsPerHour,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
             ),
             const SizedBox(height: 16),
@@ -121,10 +123,10 @@ class _AnalyticsBody extends StatelessWidget {
 
           // ── By weekday ─────────────────────────────────────────────────────
           if (data.byWeekday.isNotEmpty) ...[
-            _sectionTitle('Busiest Days'),
+            _sectionTitle(str.busiestDays),
             const SizedBox(height: 4),
             Text(
-              'Total bookings per day of week',
+              str.bookingsPerWeekday,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
             ),
             const SizedBox(height: 16),
@@ -145,7 +147,7 @@ class _AnalyticsBody extends StatelessWidget {
 
           // ── By size ────────────────────────────────────────────────────────
           if (data.bySize.isNotEmpty) ...[
-            _sectionTitle('Bookings by Court Size'),
+            _sectionTitle(str.bookingsBySize),
             const SizedBox(height: 16),
             _SizeBreakdown(sizes: data.bySize),
             const SizedBox(height: 16),

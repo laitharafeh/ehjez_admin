@@ -1,6 +1,8 @@
 import 'package:ehjez_admin/constants.dart';
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:ehjez_admin/services/reservation_service.dart';
+import 'package:ehjez_admin/services/strike_service.dart';
 import 'package:ehjez_admin/widgets/sports_court_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -154,9 +156,9 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
                 padding: const EdgeInsets.fromLTRB(24, 20, 16, 0),
                 child: Row(
                   children: [
-                    const Text(
-                      'Add Booking',
-                      style: TextStyle(
+                    Text(
+                      S.of(ctx).addBooking,
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -194,12 +196,44 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
     _invalidateBookings();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reservation deleted')),
+        SnackBar(content: Text(S.of(context).reservationDeleted)),
+      );
+    }
+  }
+
+  /// True when the booking's end time is already in the past.
+  bool _isBookingPast(_Booking booking) {
+    final end = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      booking.startHour,
+      booking.startMin,
+    ).add(Duration(hours: booking.duration));
+    return end.isBefore(DateTime.now());
+  }
+
+  Future<void> _noShowReservation(_Booking booking) async {
+    await StrikeService.addStrike(
+      phone: booking.phone,
+      courtId: widget.courtId,
+      reservationId: booking.id,
+    );
+    await ReservationService.deleteReservation(booking.id);
+    setState(() => _selectedBooking = null);
+    _invalidateBookings();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(S.of(context).noShowRecorded(booking.phone)),
+          backgroundColor: Colors.orange.shade700,
+        ),
       );
     }
   }
 
   void _showEditDialog(_Booking booking) {
+    final s = S.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -217,7 +251,7 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Field ${booking.fieldNumber}',
+              s.fieldN(booking.fieldNumber),
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ],
@@ -227,18 +261,18 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _detailRow(Icons.person_outline, 'Name', booking.name),
+              _detailRow(Icons.person_outline, s.nameField, booking.name),
               const SizedBox(height: 10),
-              _detailRow(Icons.phone_outlined, 'Phone', booking.phone),
+              _detailRow(Icons.phone_outlined, s.phoneCol, booking.phone),
               const SizedBox(height: 10),
-              _detailRow(Icons.access_time, 'Time', booking.displayTime),
+              _detailRow(Icons.access_time, s.timeCol, booking.displayTime),
               const SizedBox(height: 10),
-              _detailRow(Icons.straighten, 'Size', booking.size),
+              _detailRow(Icons.straighten, s.sizeCol, booking.size),
               const SizedBox(height: 10),
               _detailRow(
                 Icons.hourglass_bottom,
-                'Duration',
-                '${booking.duration} hour${booking.duration > 1 ? "s" : ""}',
+                s.durationShort,
+                s.durationHours(booking.duration),
               ),
             ],
           ),
@@ -246,9 +280,47 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child:
-                Text('Close', style: TextStyle(color: Colors.grey.shade600)),
+            child: Text(s.close,
+                style: TextStyle(color: Colors.grey.shade600)),
           ),
+          // No-show button — only visible for past bookings
+          if (_isBookingPast(booking))
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade700,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              icon: const Icon(Icons.person_off_outlined, size: 16),
+              label: Text(s.noShow),
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: Text(s.markAsNoShow),
+                    content: Text(
+                        s.noShowDialogBody(booking.name, booking.phone)),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: Text(s.cancel),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade700,
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: Text(s.noShow),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) await _noShowReservation(booking);
+              },
+            ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
@@ -257,20 +329,21 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
                   borderRadius: BorderRadius.circular(8)),
             ),
             icon: const Icon(Icons.delete_outline, size: 16),
-            label: const Text('Delete'),
+            label: Text(s.delete),
             onPressed: () async {
               Navigator.of(ctx).pop();
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (_) => AlertDialog(
-                  title: const Text('Confirm deletion'),
+                  title: Text(s.confirmDeletion),
                   content: Text(
-                    'Delete ${booking.name}\'s reservation at ${booking.displayTime}?',
+                    s.deleteBookingConfirm(
+                        booking.name, booking.displayTime),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Cancel'),
+                      child: Text(s.cancel),
                     ),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -278,7 +351,7 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
                         foregroundColor: Colors.white,
                       ),
                       onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text('Delete'),
+                      child: Text(s.delete),
                     ),
                   ],
                 ),
@@ -481,7 +554,7 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Field $fieldNum',
+                        S.of(context).fieldN(fieldNum),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,
@@ -528,6 +601,7 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     final sizesAsync = ref.watch(courtSizesProvider(widget.courtId));
     final sizeFields = sizesAsync.valueOrNull ?? {};
 
@@ -562,18 +636,18 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
           padding: const EdgeInsets.only(bottom: 12),
           child: Row(
             children: [
-              const Text(
-                'Court Assignment',
+              Text(
+                s.courtAssignment,
                 style:
-                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               OutlinedButton.icon(
                 onPressed: _showAddBookingDialog,
                 icon: const Icon(Icons.add_circle_outline, size: 16),
-                label: const Text(
-                  'Add Booking',
-                  style: TextStyle(fontSize: 13),
+                label: Text(
+                  s.addBooking,
+                  style: const TextStyle(fontSize: 13),
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: ehjezGreen,
@@ -592,8 +666,8 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
                       ? () => _showEditDialog(_selectedBooking!)
                       : null,
                   icon: const Icon(Icons.edit_outlined, size: 15),
-                  label: const Text('Edit',
-                      style: TextStyle(fontSize: 13)),
+                  label: Text(s.edit,
+                      style: const TextStyle(fontSize: 13)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _selectedBooking != null
                         ? ehjezGreen
@@ -617,7 +691,7 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
                 icon: const Icon(Icons.calendar_today, size: 14),
                 label: Text(
                   isToday
-                      ? 'Today'
+                      ? s.today
                       : DateFormat('MMM d, yyyy').format(_selectedDate),
                   style: const TextStyle(fontSize: 13),
                 ),
@@ -634,7 +708,7 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
               IconButton(
                 onPressed: _invalidateBookings,
                 icon: const Icon(Icons.refresh, size: 18),
-                tooltip: 'Refresh',
+                tooltip: s.refresh,
                 color: Colors.grey.shade600,
               ),
             ],
@@ -668,7 +742,7 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
                       ),
                     ),
                     child: Text(
-                      '$size  (${sizeFields[size]} fields)',
+                      s.sizeWithFields(size, sizeFields[size]!),
                       style: TextStyle(
                         color: selected
                             ? Colors.white
@@ -707,8 +781,10 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
             child: Center(
               child: Text(
                 isToday
-                    ? 'No bookings today for $_selectedSize'
-                    : 'No bookings on ${DateFormat('MMM d').format(_selectedDate)} for $_selectedSize',
+                    ? s.noBookingsToday(_selectedSize)
+                    : s.noBookingsOnDate(
+                        DateFormat('MMM d').format(_selectedDate),
+                        _selectedSize),
                 style: TextStyle(
                     color: Colors.grey.shade500, fontSize: 13),
               ),

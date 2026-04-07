@@ -1,4 +1,5 @@
 import 'package:ehjez_admin/constants.dart';
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/services/court_service.dart';
 import 'package:ehjez_admin/services/reservation_service.dart';
 import 'package:flutter/material.dart';
@@ -63,46 +64,46 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
     DateTime date,
     TimeOfDay startTime,
   ) async {
+    final s = S.of(context);
     final TextEditingController nameController = TextEditingController();
     final TextEditingController phoneController = TextEditingController();
 
     final bool confirmed =
         await showDialog<bool>(
           context: context,
-          builder: (BuildContext context) {
+          builder: (BuildContext ctx) {
             return AlertDialog(
-              title: const Text('Confirm Reservation'),
+              title: Text(s.confirmReservation),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Date: ${DateFormat.yMMMd().format(date)}'),
-                  Text('Time: ${startTime.format(context)}'),
-                  Text('Duration: $_selectedDuration hour(s)'),
-                  Text('Size: $_selectedSize'),
+                  Text(s.confirmDate(DateFormat.yMMMd().format(date))),
+                  Text(s.confirmTime(startTime.format(ctx))),
+                  Text(s.confirmDurationLabel(_selectedDuration)),
+                  Text(s.confirmSize(_selectedSize ?? '')),
                   Text(
-                    'Price: ${_courtPrices[_selectedSize!]?[_selectedDuration] ?? 0} JOD',
+                    s.confirmPrice(
+                        _courtPrices[_selectedSize!]?[_selectedDuration] ?? 0),
                   ),
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Name'),
+                    decoration: InputDecoration(labelText: s.nameField),
                   ),
                   TextField(
                     controller: phoneController,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone Number',
-                    ),
+                    decoration: InputDecoration(labelText: s.phoneNumberField),
                     keyboardType: TextInputType.phone,
                   ),
                 ],
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: Text(s.cancel),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Confirm'),
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: Text(s.confirm),
                 ),
               ],
             );
@@ -125,18 +126,19 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
         );
 
         if (!context.mounted) return;
+        final s2 = S.of(context);
 
         if (result['success'] == true) {
           await _fetchReservations();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Reservation added successfully!')),
+            SnackBar(content: Text(s2.reservationAddedSuccess)),
           );
           widget.onBookingAdded?.call();
         } else {
           final error = result['error'] as String?;
           final message = error == 'slot_full'
-              ? 'This slot is no longer available. Please choose another time.'
-              : 'Could not complete booking (${error ?? 'unknown error'}).';
+              ? s2.slotFullError
+              : s2.bookingErrorGeneric(error ?? 'unknown error');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(message)),
           );
@@ -144,7 +146,8 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
       } catch (e) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating reservation: $e')),
+          SnackBar(
+              content: Text(S.of(context).errorCreatingReservation(e.toString()))),
         );
       }
     }
@@ -210,8 +213,9 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
       await _fetchReservations();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error loading court data: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text(S.of(context).errorLoadingCourtData(e.toString()))));
       }
       _courtStartTime = DateTime.now().copyWith(hour: 8, minute: 0);
       _courtEndTime = DateTime.now()
@@ -258,7 +262,9 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading reservations: $e')),
+          SnackBar(
+              content: Text(
+                  S.of(context).errorLoadingReservations(e.toString()))),
         );
       }
     } finally {
@@ -403,11 +409,13 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
 
+    final s = S.of(context);
+
     bool canReserve = false;
     if (_selectedSlotTime != null && _selectedDay != null) {
       final slots = _getAvailableSlots(_selectedDay!);
       final match = slots.firstWhere(
-        (s) => s['time'] == _selectedSlotTime,
+        (sl) => sl['time'] == _selectedSlotTime,
         orElse: () => {'isAvailable': false},
       );
       canReserve = match['isAvailable'] as bool;
@@ -427,7 +435,7 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'الأحجام',
+              s.sizesLabel,
               style:
                   const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
@@ -468,9 +476,9 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
               ),
             ),
           ] else
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text('No sizes available for this court'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(s.noSizesAvailable),
             ),
 
           // Calendar — vacation days shown with red decoration
@@ -546,9 +554,7 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'This day is marked as a vacation day. '
-                      'Users cannot book on this date. '
-                      'You can still add a booking as an override.',
+                      s.vacationDayWarning,
                       style: TextStyle(
                           color: Colors.red.shade700, fontSize: 12),
                     ),
@@ -559,9 +565,13 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
 
           const Divider(),
           const SizedBox(height: 10),
-          const Text(
-            'حدد المدة',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              s.selectDuration,
+              style:
+                  const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            ),
           ),
           const SizedBox(height: 15),
           Center(
@@ -578,14 +588,16 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
               selectedColor: Colors.white,
               color: Colors.black,
               fillColor: const Color(0xFF068631),
-              children: const [
+              children: [
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text('1 Hour'),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
+                  child: Text(s.oneHour),
                 ),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text('2 Hours'),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
+                  child: Text(s.twoHours),
                 ),
               ],
             ),
@@ -597,7 +609,12 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'الأوقات المتاحة ${_selectedDay!.day}/${_selectedDay!.month}/${_selectedDay!.year} ($_selectedSize)',
+                s.availableSlotsLabel(
+                  _selectedDay!.day,
+                  _selectedDay!.month,
+                  _selectedDay!.year,
+                  _selectedSize!,
+                ),
                 style: const TextStyle(
                     fontSize: 17, fontWeight: FontWeight.bold),
               ),
@@ -640,7 +657,7 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
                       ),
                       if (!isAvailable)
                         Text(
-                          'Reserved',
+                          s.reserved,
                           style: TextStyle(
                               color: Colors.red[800],
                               fontWeight: FontWeight.bold),
@@ -659,9 +676,9 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
               );
             }),
           ] else
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Select a day and size to view available slots'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(s.selectDayAndSize),
             ),
 
           // Add booking button
@@ -695,7 +712,7 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text("اضافة حجز"),
+                child: Text(s.addBooking),
               ),
             ),
           ),

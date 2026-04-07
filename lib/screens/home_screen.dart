@@ -1,4 +1,5 @@
 import 'package:ehjez_admin/constants.dart';
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/models/admin_court.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:ehjez_admin/services/auth_service.dart';
@@ -14,10 +15,12 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final courtAsync = ref.watch(currentCourtProvider);
+    final s = S.of(context);
 
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: kToolbarHeight + 40,
+        leading: const _LangToggle(),
         title: Text(
           'ehjez',
           style: GoogleFonts.grandstander(
@@ -28,10 +31,9 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          // Only show the settings gear when the court is loaded
           if (courtAsync.valueOrNull != null)
             IconButton(
-              tooltip: 'Court Settings',
+              tooltip: s.courtSettings,
               icon: const Icon(Icons.settings_outlined),
               onPressed: () =>
                   context.push('/settings/${courtAsync.value!.id}'),
@@ -40,71 +42,96 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: courtAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (e, _) => Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.phone_disabled_outlined,
-                        color: Colors.redAccent,
-                        size: 42,
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'This account is not linked to any court.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.redAccent,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Sign in again with a court phone number to continue.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey.shade700),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () async {
-                          await AuthService.signOut();
-                          // go_router's refreshListenable redirects to /login automatically
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: ehjezGreen,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Back To Login'),
-                      ),
-                    ],
+        error: (e, _) => Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.phone_disabled_outlined,
+                    color: Colors.redAccent,
+                    size: 42,
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  Text(
+                    s.notLinkedToCourt,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    s.signInWithCourtPhone,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await AuthService.signOut();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ehjezGreen,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text(s.backToLogin),
+                  ),
+                ],
               ),
             ),
+          ),
+        ),
         data: (court) => _HomeBody(court: court),
       ),
     );
   }
 }
 
-class _HomeBody extends StatelessWidget {
+// ── Language toggle ────────────────────────────────────────────────────────────
+
+class _LangToggle extends ConsumerWidget {
+  const _LangToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(languageProvider);
+    final isAr = lang == 'ar';
+    return IconButton(
+      tooltip: isAr ? 'Switch to English' : 'التبديل إلى العربية',
+      icon: Text(
+        isAr ? 'EN' : 'ع',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: ehjezGreen,
+        ),
+      ),
+      onPressed: () {
+        ref.read(languageProvider.notifier).state = isAr ? 'en' : 'ar';
+      },
+    );
+  }
+}
+
+// ── Body ───────────────────────────────────────────────────────────────────────
+
+class _HomeBody extends ConsumerWidget {
   final AdminCourt court;
   const _HomeBody({required this.court});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = S.of(context);
     return Center(
       child: Column(
         children: [
           const SizedBox(height: 10),
-
-          // Court name subtitle so admin knows which court they manage
           Text(
             court.name,
             style: const TextStyle(
@@ -113,36 +140,24 @@ class _HomeBody extends StatelessWidget {
               color: Colors.black54,
             ),
           ),
-
           const SizedBox(height: 10),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CustomSquareButton(
                 onTap: () => context.push('/reservations'),
-                text: 'Reservations',
+                text: s.reservations,
                 assetPath: 'assets/reservation_icon.png',
               ),
               CustomSquareButton(
                 onTap: () => context.push('/accounting/${court.id}'),
-                text: 'Finances',
+                text: s.finances,
                 assetPath: 'assets/accounting_icon.png',
               ),
               CustomSquareButton(
                 onTap: () => context.push('/analytics/${court.id}'),
-                text: 'Analytics',
+                text: s.analytics,
                 assetPath: 'assets/marketing_icon.png',
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CustomSquareButton(
-                onTap: () => context.push('/blacklist'),
-                text: 'Blacklist',
-                assetPath: 'assets/reservation_icon.png',
               ),
             ],
           ),

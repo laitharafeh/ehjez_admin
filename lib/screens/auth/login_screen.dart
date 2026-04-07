@@ -1,4 +1,5 @@
 import 'package:ehjez_admin/constants.dart';
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -27,9 +28,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    final s = S.of(context);
     final raw = _phoneController.text.trim();
     if (!_isValidJordanianNumber(raw)) {
-      setState(() => _phoneError = 'Enter a valid Jordanian mobile number.');
+      setState(() => _phoneError = s.invalidJordanianNumber);
       return;
     }
 
@@ -43,8 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final exists = await AuthService.courtExistsForPhone(phone);
       if (!mounted) return;
       if (!exists) {
-        setState(() =>
-            _phoneError = 'This number is not linked to any court account.');
+        setState(() => _phoneError = S.of(context).phoneNotLinked);
         return;
       }
       await AuthService.signInWithOtp(phone);
@@ -52,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
       context.push('/otp', extra: phone);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _phoneError = 'Something went wrong. Please try again.');
+      setState(() => _phoneError = S.of(context).somethingWentWrong);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -66,6 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
       body: Center(
@@ -76,7 +78,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ── Logo ──────────────────────────────────────────────────
                 Text(
                   'ehjez',
                   style: GoogleFonts.grandstander(
@@ -88,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Admin Portal',
+                  s.adminPortal,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -96,10 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     letterSpacing: 1.5,
                   ),
                 ),
-
                 const SizedBox(height: 40),
-
-                // ── Card ──────────────────────────────────────────────────
                 Container(
                   padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
@@ -116,9 +114,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
-                        'Sign in',
-                        style: TextStyle(
+                      Text(
+                        s.signInTitle,
+                        style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
@@ -126,15 +124,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Enter the phone number linked to your court',
+                        s.enterPhoneLinkedToCourt,
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey.shade600,
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // Phone field
                       TextField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
@@ -186,10 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 20),
-
-                      // Continue button
                       SizedBox(
                         height: 48,
                         child: ElevatedButton(
@@ -213,9 +206,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text(
-                                  'Continue',
-                                  style: TextStyle(
+                              : Text(
+                                  s.continueBtn,
+                                  style: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                   ),

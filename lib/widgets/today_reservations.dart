@@ -1,3 +1,4 @@
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:ehjez_admin/services/strike_service.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ class TodayReservations extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = S.of(context);
     final reservationsAsync = ref.watch(todaysReservationsProvider(courtId));
 
     return Align(
@@ -19,17 +21,17 @@ class TodayReservations extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const Text(
-              'حجوزات اليوم',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Text(
+              s.todayReservations,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             reservationsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('خطأ: $e')),
+              error: (e, _) => Center(child: Text(s.errorMsg(e.toString()))),
               data: (list) {
                 if (list.isEmpty) {
-                  return const Center(child: Text('لا توجد حجوزات لليوم.'));
+                  return Center(child: Text(s.noReservationsToday));
                 }
 
                 // Fetch strike counts for all phones in one query
@@ -53,7 +55,7 @@ class TodayReservations extends ConsumerWidget {
                     final reservationId = r['id'] as int;
                     final start = r['start_time'] as String;
                     final duration = r['duration'] as int;
-                    final size = r['size'];
+                    final size = r['size'] as String? ?? '—';
                     final phone = r['phone'] as String? ?? '—';
                     final name = r['name'] as String? ?? '—';
                     final fieldNum = r['field_number'] as int? ?? 1;
@@ -109,8 +111,8 @@ class TodayReservations extends ConsumerWidget {
                         ],
                       ),
                       subtitle: Text(
-                        ' $phone :رقم الهاتف \n $size :الحجم \n $name :الاسم',
-                        textAlign: TextAlign.right,
+                        s.reservationSubtitle(phone, size, name),
+                        textAlign: s.isAr ? TextAlign.right : TextAlign.left,
                       ),
                       trailing: _NoShowButton(
                         phone: phone,
@@ -190,23 +192,21 @@ class _NoShowButtonState extends State<_NoShowButton> {
   bool _loading = false;
 
   Future<void> _handleNoShow() async {
+    final s = S.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Mark as No-Show?'),
-        content: Text(
-          'This will add a strike to ${widget.phone}.\n'
-          'At 5 active strikes they will be blacklisted.',
-        ),
+        title: Text(s.markAsNoShow),
+        content: Text(s.noShowWarning(widget.phone)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Add Strike'),
+            child: Text(s.addStrike),
           ),
         ],
       ),
@@ -224,13 +224,14 @@ class _NoShowButtonState extends State<_NoShowButton> {
       widget.onStrikeAdded();
 
       if (!mounted) return;
+      final s2 = S.of(context);
       final wasBlacklisted = newCount >= 5;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             wasBlacklisted
-                ? '${widget.phone} has been blacklisted after $newCount strikes.'
-                : 'Strike added. ${widget.phone} now has $newCount active strike${newCount == 1 ? '' : 's'}.',
+                ? s2.blacklistedAfterStrikes(widget.phone, newCount)
+                : s2.strikeAdded(widget.phone, newCount),
           ),
           backgroundColor: wasBlacklisted ? Colors.red : Colors.orange,
         ),
@@ -250,7 +251,7 @@ class _NoShowButtonState extends State<_NoShowButton> {
       );
     }
     return Tooltip(
-      message: 'Mark as no-show',
+      message: S.of(context).markAsNoShowTooltip,
       child: IconButton(
         icon: const Icon(Icons.person_off_outlined, color: Colors.red),
         onPressed: widget.phone == '—' ? null : _handleNoShow,

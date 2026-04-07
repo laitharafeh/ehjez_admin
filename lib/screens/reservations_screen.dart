@@ -1,3 +1,4 @@
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:ehjez_admin/services/auth_service.dart';
 import 'package:ehjez_admin/widgets/court_assignment_board.dart';
@@ -17,11 +18,12 @@ class ReservationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final courtAsync = ref.watch(currentCourtProvider);
 
+    final s = S.of(context);
     return Scaffold(
       appBar: AppBar(
         title: courtAsync.whenData((c) => c.name).value != null
             ? Text(courtAsync.value!.name)
-            : const Text('Reservations'),
+            : Text(s.reservations),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -33,7 +35,7 @@ class ReservationsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
-            'Error loading court: $e',
+            s.errorLoadingCourt('$e'),
             style: const TextStyle(color: Colors.red, fontSize: 16),
             textAlign: TextAlign.center,
           ),

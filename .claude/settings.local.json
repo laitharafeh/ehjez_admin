@@ -6,7 +6,8 @@
       "mcp__7bff3787-16b3-425c-8279-964bc9430c52__get_logs",
       "Bash(/Users/laitharafeh/flutter/bin/flutter analyze:*)",
       "Bash(dart --version)",
-      "Bash(dart analyze:*)"
+      "Bash(dart analyze:*)",
+      "mcp__7bff3787-16b3-425c-8279-964bc9430c52__deploy_edge_function"
     ]
   }
 }

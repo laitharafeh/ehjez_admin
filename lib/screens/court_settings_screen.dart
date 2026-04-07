@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:ehjez_admin/models/admin_court.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:ehjez_admin/services/court_service.dart';
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,7 +20,7 @@ class CourtSettingsScreen extends ConsumerWidget {
     final dataAsync = ref.watch(courtSettingsProvider(courtId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Court Settings')),
+      appBar: AppBar(title: Text(S.of(context).courtSettings)),
       body: dataAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -85,15 +86,6 @@ class _SettingsFormState extends State<_SettingsForm> {
 
   bool _saving = false;
 
-  static const _dayLabels = {
-    1: 'Mon',
-    2: 'Tue',
-    3: 'Wed',
-    4: 'Thu',
-    5: 'Fri',
-    6: 'Sat',
-    7: 'Sun',
-  };
 
   @override
   void initState() {
@@ -298,25 +290,24 @@ class _SettingsFormState extends State<_SettingsForm> {
     // Existing rows: confirm, then check for upcoming reservations
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Remove size?'),
-        content: Text(
-          'Are you sure you want to remove the "$size" size?\n\n'
-          'This cannot be undone. Any upcoming reservations for this size '
-          'must be cleared first.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        final s = S.of(ctx);
+        return AlertDialog(
+          title: Text(s.deleteSizeTitle),
+          content: Text(s.confirmDeleteSize(size)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(s.cancel),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(s.delete),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed != true || !mounted) return;
 
@@ -331,11 +322,7 @@ class _SettingsFormState extends State<_SettingsForm> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Cannot remove "$size" — it has $count upcoming '
-              '${count == 1 ? 'reservation' : 'reservations'}. '
-              'Cancel them first.',
-            ),
+            content: Text(S.of(context).upcomingReservationsWarning(count)),
             backgroundColor: Colors.red.shade700,
           ),
         );
@@ -345,16 +332,16 @@ class _SettingsFormState extends State<_SettingsForm> {
       await CourtService.deleteSizePrice(row['id'] as int);
       _disposeRow(row);
       setState(() => _priceRows.removeAt(index));
-      widget.onSaved(); // refresh parent providers
+      widget.onSaved();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"$size" removed.')),
+        SnackBar(content: Text('"$size" ${S.of(context).remove.toLowerCase()}d.')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to remove size: $e'),
+          content: Text(S.of(context).errorDeletingSize('$e')),
           backgroundColor: Colors.red,
         ),
       );
@@ -374,24 +361,15 @@ class _SettingsFormState extends State<_SettingsForm> {
 
   /// Returns a human-readable error string, or null if everything is valid.
   String? _validate() {
-    // Court name is required
-    if (_nameCtrl.text.trim().isEmpty) {
-      return 'Court name cannot be empty.';
-    }
+    final s = S.of(context);
+    if (_nameCtrl.text.trim().isEmpty) return s.courtNameEmpty;
 
-    // End time must be after start time
     final startMinutes = _startTime.hour * 60 + _startTime.minute;
     final endMinutes = _endTime.hour * 60 + _endTime.minute;
-    if (endMinutes <= startMinutes) {
-      return 'Closing time must be after opening time.';
-    }
+    if (endMinutes <= startMinutes) return s.closingBeforeOpening;
 
-    // At least one working day
-    if (_workingDays.isEmpty) {
-      return 'Select at least one working day.';
-    }
+    if (_workingDays.isEmpty) return s.selectOneWorkingDay;
 
-    // No duplicate size names
     final allSizeNames = _priceRows.map((row) {
       final isNew = row['isNew'] as bool;
       return isNew
@@ -399,46 +377,36 @@ class _SettingsFormState extends State<_SettingsForm> {
           : (row['size'] as String).toLowerCase();
     }).toList();
     if (allSizeNames.length != allSizeNames.toSet().length) {
-      return 'Each size must have a unique name.';
+      return s.uniqueSizeNames;
     }
 
-    // Per-size row validations
     for (final row in _priceRows) {
       final isNew = row['isNew'] as bool;
       final size = isNew
           ? (row['sizeCtrl'] as TextEditingController).text.trim()
           : row['size'] as String;
 
-      if (isNew && size.isEmpty) {
-        return 'Size name cannot be empty.';
-      }
+      if (isNew && size.isEmpty) return s.sizeNameEmpty;
 
       final p1Text = (row['price1Ctrl'] as TextEditingController).text.trim();
       final p2Text = (row['price2Ctrl'] as TextEditingController).text.trim();
       final fText = (row['fieldsCtrl'] as TextEditingController).text.trim();
 
-      // Prices — must be a non-negative number if provided
-      for (final entry in [('Weekday price', p1Text), ('Weekend price', p2Text)]) {
-        final label = entry.$1;
-        final val = entry.$2;
-        if (val.isNotEmpty) {
-          final d = double.tryParse(val);
-          if (d == null) return '$label for "$size" must be a valid number.';
-          if (d < 0) return '$label for "$size" cannot be negative.';
-        }
+      if (p1Text.isNotEmpty) {
+        final d = double.tryParse(p1Text);
+        if (d == null) return s.weekdayPriceInvalid(size);
+        if (d < 0) return s.priceNegative(s.price1hr, size);
+      }
+      if (p2Text.isNotEmpty) {
+        final d = double.tryParse(p2Text);
+        if (d == null) return s.weekendPriceInvalid(size);
+        if (d < 0) return s.priceNegative(s.price2hr, size);
       }
 
-      // Number of fields — required, integer, minimum 1
-      if (fText.isEmpty) {
-        return 'Number of fields for "$size" is required.';
-      }
+      if (fText.isEmpty) return s.fieldsRequired(size);
       final fields = int.tryParse(fText);
-      if (fields == null) {
-        return 'Number of fields for "$size" must be a whole number.';
-      }
-      if (fields < 1) {
-        return 'Number of fields for "$size" must be at least 1.';
-      }
+      if (fields == null) return s.fieldsWholeNumber(size);
+      if (fields < 1) return s.fieldsMinOne(size);
     }
 
     return null;
@@ -512,14 +480,14 @@ class _SettingsFormState extends State<_SettingsForm> {
       widget.onSaved();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Settings saved.')),
+          SnackBar(content: Text(S.of(context).settingsSaved)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Save failed: $e'),
+            content: Text(S.of(context).saveFailed('$e')),
             backgroundColor: Colors.red,
           ),
         );
@@ -580,7 +548,7 @@ class _SettingsFormState extends State<_SettingsForm> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.save),
-                  label: Text(_saving ? 'Saving…' : 'Save Changes'),
+                  label: Text(_saving ? S.of(context).saving : S.of(context).saveChanges),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF068631),
                     foregroundColor: Colors.white,
@@ -601,7 +569,7 @@ class _SettingsFormState extends State<_SettingsForm> {
         onPressed: () =>
             context.push('/vacation-days/${widget.courtId}'),
         icon: const Icon(Icons.beach_access_outlined, size: 16),
-        label: const Text('Manage Vacation Days'),
+        label: Text(S.of(context).manageVacationDays),
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.orange.shade700,
           side: BorderSide(color: Colors.orange.shade300),
@@ -640,50 +608,54 @@ class _SettingsFormState extends State<_SettingsForm> {
     );
   }
 
-  Widget _basicInfoCard() => _sectionCard(
-        title: 'Basic Information',
-        child: Column(
-          children: [
-            _labeledField('Court Name', _nameCtrl),
-            const SizedBox(height: 12),
-            _labeledField('Category', _categoryCtrl,
-                hint: 'e.g. Football, Basketball'),
-            const SizedBox(height: 12),
-            _labeledField('Location', _locationCtrl,
-                hint: 'Address or area'),
-          ],
-        ),
-      );
+  Widget _basicInfoCard() {
+    final s = S.of(context);
+    return _sectionCard(
+      title: s.basicInformation,
+      child: Column(
+        children: [
+          _labeledField(s.courtName, _nameCtrl),
+          const SizedBox(height: 12),
+          _labeledField(s.category, _categoryCtrl, hint: s.categoryHint),
+          const SizedBox(height: 12),
+          _labeledField(s.location, _locationCtrl, hint: s.locationHint),
+        ],
+      ),
+    );
+  }
 
-  Widget _hoursCard() => _sectionCard(
-        title: 'Opening Hours',
-        child: Row(
-          children: [
-            Expanded(
-              child: _timeTile(
-                label: 'Opening time',
-                time: _startTime,
-                onTap: () => _pickTime(isStart: true),
-              ),
+  Widget _hoursCard() {
+    final s = S.of(context);
+    return _sectionCard(
+      title: s.openingHours,
+      child: Row(
+        children: [
+          Expanded(
+            child: _timeTile(
+              label: s.openingTime,
+              time: _startTime,
+              onTap: () => _pickTime(isStart: true),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _timeTile(
-                label: 'Closing time',
-                time: _endTime,
-                onTap: () => _pickTime(isStart: false),
-              ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _timeTile(
+              label: s.closingTime,
+              time: _endTime,
+              onTap: () => _pickTime(isStart: false),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _workingDaysCard() => _sectionCard(
-        title: 'Working Days',
+        title: S.of(context).workingDays,
         child: Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _dayLabels.entries.map((entry) {
+          children: S.of(context).dayLabels.entries.map((entry) {
             final selected = _workingDays.contains(entry.key);
             return FilterChip(
               label: Text(entry.value),
@@ -705,7 +677,7 @@ class _SettingsFormState extends State<_SettingsForm> {
       );
 
   Widget _pricingCard() => _sectionCard(
-        title: 'Sizes & Pricing',
+        title: S.of(context).sizesAndPricing,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -744,8 +716,8 @@ class _SettingsFormState extends State<_SettingsForm> {
                           Expanded(
                             child: TextFormField(
                               controller: sizeCtrl,
-                              decoration: const InputDecoration(
-                                labelText: 'Size name (e.g. 5v5)',
+                              decoration: InputDecoration(
+                                labelText: S.of(context).sizeNameHint,
                                 border: OutlineInputBorder(),
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -766,7 +738,7 @@ class _SettingsFormState extends State<_SettingsForm> {
                           ),
                         const SizedBox(width: 8),
                         IconButton(
-                          tooltip: 'Remove this size',
+                          tooltip: S.of(context).removeThisSize,
                           icon: const Icon(
                             Icons.delete_outline,
                             color: Colors.red,
@@ -782,14 +754,14 @@ class _SettingsFormState extends State<_SettingsForm> {
                       children: [
                         Expanded(
                           child: _numField(
-                            label: 'Price (1 hr)',
+                            label: S.of(context).price1hr,
                             ctrl: p1c,
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: _numField(
-                            label: 'Price (2 hr)',
+                            label: S.of(context).price2hr,
                             ctrl: p2c,
                           ),
                         ),
@@ -797,7 +769,7 @@ class _SettingsFormState extends State<_SettingsForm> {
                         SizedBox(
                           width: 90,
                           child: _numField(
-                            label: 'Fields',
+                            label: S.of(context).fields,
                             ctrl: fc,
                             isInt: true,
                           ),
@@ -812,7 +784,7 @@ class _SettingsFormState extends State<_SettingsForm> {
             OutlinedButton.icon(
               onPressed: _saving ? null : _addSize,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add Size'),
+              label: Text(S.of(context).addSize),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF068631),
                 side: const BorderSide(color: Color(0xFF068631)),
@@ -823,7 +795,7 @@ class _SettingsFormState extends State<_SettingsForm> {
       );
 
   Widget _photosCard() => _sectionCard(
-        title: 'Court Photos',
+        title: S.of(context).courtPhotos,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: List.generate(3, (i) => _imageSlot(i))
@@ -959,14 +931,14 @@ class _SettingsFormState extends State<_SettingsForm> {
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.camera_alt, size: 13, color: Colors.white),
+                        const Icon(Icons.camera_alt, size: 13, color: Colors.white),
                         SizedBox(width: 4),
                         Text(
-                          'Change',
-                          style: TextStyle(
+                          S.of(context).change,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -997,7 +969,7 @@ class _SettingsFormState extends State<_SettingsForm> {
               size: 32, color: Colors.grey.shade500),
           const SizedBox(height: 6),
           Text(
-            'Photo ${slot + 1}',
+            S.of(context).photoN(slot + 1),
             style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
           ),
         ],

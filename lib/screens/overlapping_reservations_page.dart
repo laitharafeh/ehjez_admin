@@ -1,3 +1,4 @@
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,22 +34,23 @@ class OverlappingReservationsPage extends ConsumerWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirm delete'),
-        content: const Text(
-          'Are you sure you want to delete this reservation?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('No'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Yes'),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        final s = S.of(ctx);
+        return AlertDialog(
+          title: Text(s.confirmDelete),
+          content: Text(s.confirmDeleteBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(s.no),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(s.yes),
+            ),
+          ],
+        );
+      },
     );
     if (confirmed == true) {
       await ref
@@ -70,13 +72,14 @@ class OverlappingReservationsPage extends ConsumerWidget {
     final overlapsAsync = ref.watch(overlappingReservationsProvider(args));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Overlapping Reservations')),
+      appBar: AppBar(title: Text(S.of(context).overlappingReservations)),
       body: overlapsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (overlaps) {
+          final s = S.of(context);
           if (overlaps.isEmpty) {
-            return const Center(child: Text('No overlapping reservations.'));
+            return Center(child: Text(s.noOverlapping));
           }
           return ListView.separated(
             itemCount: overlaps.length,
@@ -84,11 +87,11 @@ class OverlappingReservationsPage extends ConsumerWidget {
             itemBuilder: (ctx, i) {
               final entry = overlaps[i];
               return ListTile(
-                title: Text('Name: ${entry.name}'),
+                title: Text(s.nameLabel(entry.name)),
                 subtitle: Text(
                   '${_formatTime(entry.start)} – ${_formatTime(entry.end)} '
                   '(${entry.duration}h)\n'
-                  'Phone: ${entry.phone}',
+                  '${s.phoneLabel(entry.phone)}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 trailing: IconButton(

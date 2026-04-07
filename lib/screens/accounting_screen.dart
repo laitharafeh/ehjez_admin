@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:html' as html;
 
 import 'package:ehjez_admin/constants.dart';
+import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:ehjez_admin/utils/invoice_generator.dart';
 import 'package:flutter/material.dart';
@@ -88,13 +89,13 @@ class _AccountingScreenState extends ConsumerState<AccountingScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invoice downloaded.')),
+        SnackBar(content: Text(S.of(context).invoiceDownloaded)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('PDF error: $e'),
+          content: Text(S.of(context).pdfError('$e')),
           backgroundColor: Colors.red,
         ),
       );
@@ -106,7 +107,7 @@ class _AccountingScreenState extends ConsumerState<AccountingScreen> {
     final dataAsync = ref.watch(monthlyAccountingProvider(_args));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Finances')),
+      appBar: AppBar(title: Text(S.of(context).finances)),
       body: dataAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -168,7 +169,7 @@ class _Body extends StatelessWidget {
               _SummaryCards(data: data),
               const SizedBox(height: 24),
               if (data.dailyRevenue.isNotEmpty) ...[
-                _SectionTitle('Daily Revenue'),
+                _SectionTitle(S.of(context).dailyRevenue),
                 const SizedBox(height: 12),
                 _DailyChart(
                   days: data.dailyRevenue,
@@ -177,22 +178,22 @@ class _Body extends StatelessWidget {
                 const SizedBox(height: 24),
               ],
               if (data.bySize.isNotEmpty) ...[
-                _SectionTitle('Revenue by Field Size'),
+                _SectionTitle(S.of(context).revenueBySize),
                 const SizedBox(height: 12),
                 _SizeBreakdown(data: data),
                 const SizedBox(height: 24),
               ],
               if (data.bookings.isNotEmpty) ...[
-                _SectionTitle('Bookings (${data.bookings.length})'),
+                _SectionTitle(S.of(context).bookingsSection(data.bookings.length)),
                 const SizedBox(height: 12),
                 _BookingsTable(bookings: data.bookings),
               ] else
-                const Center(
+                Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 32),
+                    padding: const EdgeInsets.symmetric(vertical: 32),
                     child: Text(
-                      'No bookings this month.',
-                      style: TextStyle(color: Colors.grey),
+                      S.of(context).noBookingsThisMonth,
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ),
                 ),
@@ -228,7 +229,7 @@ class _MonthHeader extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.chevron_left),
           onPressed: onPrev,
-          tooltip: 'Previous month',
+          tooltip: S.of(context).previousMonth,
         ),
         Expanded(
           child: Text(
@@ -240,7 +241,7 @@ class _MonthHeader extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.chevron_right),
           onPressed: onNext,
-          tooltip: 'Next month',
+          tooltip: S.of(context).nextMonth,
           color: onNext == null ? Colors.grey.shade300 : null,
         ),
         const SizedBox(width: 8),
@@ -279,7 +280,7 @@ class _SummaryCards extends StatelessWidget {
       children: [
         Expanded(
           child: _SummaryCard(
-            label: 'Revenue',
+            label: S.of(context).revenue,
             value: '${fmt.format(data.revenue)} JOD',
             icon: Icons.payments_outlined,
             color: ehjezGreen,
@@ -290,7 +291,7 @@ class _SummaryCards extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _SummaryCard(
-            label: 'Bookings',
+            label: S.of(context).bookingsCount,
             value: '${data.bookingCount}',
             icon: Icons.event_available_outlined,
             color: Colors.blue.shade600,
@@ -301,7 +302,7 @@ class _SummaryCards extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _SummaryCard(
-            label: 'Commission',
+            label: S.of(context).commission,
             value: '${fmt.format(data.commission)} JOD',
             icon: Icons.percent_outlined,
             color: Colors.orange.shade700,
@@ -310,7 +311,7 @@ class _SummaryCards extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _SummaryCard(
-            label: 'Net Profit',
+            label: S.of(context).netProfit,
             value: '${fmt.format(netProfit)} JOD',
             icon: Icons.trending_up,
             color: Colors.teal.shade600,
@@ -413,7 +414,7 @@ class _SummaryCard extends StatelessWidget {
             if (badge != null && prev != null && prev! > 0) ...[
               const SizedBox(height: 4),
               Text(
-                'vs ${NumberFormat('#,##0.##').format(prev!)} last month',
+                S.of(context).vsLastMonth(NumberFormat('#,##0.##').format(prev!)),
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
               ),
             ],
@@ -591,15 +592,15 @@ class _BookingsTable extends StatelessWidget {
           headingTextStyle: headStyle,
           dataTextStyle: cellStyle,
           columnSpacing: 20,
-          columns: const [
-            DataColumn(label: Text('Date')),
-            DataColumn(label: Text('Time')),
-            DataColumn(label: Text('Field')),
-            DataColumn(label: Text('Size')),
-            DataColumn(label: Text('Customer')),
-            DataColumn(label: Text('Phone')),
-            DataColumn(label: Text('Price'), numeric: true),
-            DataColumn(label: Text('Commission'), numeric: true),
+          columns: [
+            DataColumn(label: Text(S.of(context).dateCol)),
+            DataColumn(label: Text(S.of(context).timeCol)),
+            DataColumn(label: Text(S.of(context).fieldCol)),
+            DataColumn(label: Text(S.of(context).sizeCol)),
+            DataColumn(label: Text(S.of(context).customerCol)),
+            DataColumn(label: Text(S.of(context).phoneCol)),
+            DataColumn(label: Text(S.of(context).priceCol), numeric: true),
+            DataColumn(label: Text(S.of(context).commission), numeric: true),
           ],
           rows: bookings.asMap().entries.map((entry) {
             final i = entry.key;
