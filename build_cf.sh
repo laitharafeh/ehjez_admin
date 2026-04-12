@@ -23,4 +23,7 @@ flutter pub get
 # 4. Build
 flutter build web --release
 
-echo "Build complete → build/web"
+# 5. Move output to dist/ — Cloudflare Pages defaults to this directory
+mv build/web dist
+
+echo "Build complete → dist/"
