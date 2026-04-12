@@ -33,16 +33,14 @@ class _OtpScreenState extends State<OtpScreen> {
     try {
       final res = await AuthService.verifyOtp(widget.phoneNumber, code);
       if (!mounted) return;
-      if (res.session != null) {
-        await AuthService.ensureUserRecord(
-          res.session!.user.id,
-          widget.phoneNumber,
-        );
-        if (!mounted) return;
-        context.go('/');
-      } else {
+      if (res.session == null) {
         setState(() => _error = S.of(context).invalidCode);
       }
+      // Navigation is handled entirely by go_router's refreshListenable.
+      // The SIGNED_IN auth event fires synchronously inside verifyOTP, which
+      // triggers _AuthChangeNotifier → notifyListeners() → redirect to '/'.
+      // Calling context.go('/') here as well creates a double-navigation race
+      // that leaves go_router stuck between routes.
     } catch (_) {
       if (!mounted) return;
       setState(() => _error = S.of(context).invalidCode);

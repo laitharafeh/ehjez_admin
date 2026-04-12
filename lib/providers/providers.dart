@@ -2,6 +2,12 @@ import 'package:ehjez_admin/models/admin_court.dart';
 import 'package:ehjez_admin/services/court_service.dart';
 import 'package:ehjez_admin/services/reservation_service.dart';
 import 'package:ehjez_admin/services/strike_service.dart';
+import 'package:ehjez_admin/services/customer_service.dart';
+import 'package:ehjez_admin/services/promo_service.dart';
+import 'package:ehjez_admin/services/pricing_service.dart';
+import 'package:ehjez_admin/services/recurring_service.dart';
+import 'package:ehjez_admin/services/tournament_service.dart';
+import 'package:ehjez_admin/services/staff_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -27,11 +33,25 @@ final currentUserProvider = Provider<User?>((ref) {
 // Automatically re-runs when the user changes (login / logout).
 
 final currentCourtProvider = FutureProvider<AdminCourt>((ref) async {
-  final user = ref.watch(currentUserProvider);
+  // Watch the auth stream purely for reactivity — re-runs on login/logout.
+  // Do NOT derive the user from it: the stream may not have emitted the new
+  // state yet by the time the router redirect lands on HomeScreen, which
+  // causes a null-user race and the screen to appear stuck.
+  ref.watch(authStateProvider);
 
+  // Read the user directly from the live session — always up-to-date.
+  final user = Supabase.instance.client.auth.currentSession?.user;
   if (user == null) throw Exception('Not authenticated');
 
-  final court = await CourtService.getCourtForUser(user.id);
+  // Fast path: user already has a court_managers row (all repeat logins).
+  AdminCourt? court = await CourtService.getCourtForUser(user.id);
+
+  // Slow path: first login — ensure_court_manager hasn't run yet because
+  // the OTP screen navigates away immediately without waiting for it.
+  if (court == null) {
+    await Supabase.instance.client.rpc('ensure_court_manager');
+    court = await CourtService.getCourtForUser(user.id);
+  }
 
   if (court == null) {
     throw Exception('This account is not linked to any court');
@@ -321,6 +341,60 @@ class BlacklistNotifier extends AsyncNotifier<List<BlacklistEntry>> {
 final blacklistProvider =
     AsyncNotifierProvider<BlacklistNotifier, List<BlacklistEntry>>(
   BlacklistNotifier.new,
+);
+
+// ─── Promo Codes ──────────────────────────────────────────────────────────────
+
+final promoCodesProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>(
+  (ref, courtId) => PromoService.getCodes(courtId),
+);
+
+// ─── Pricing Rules ────────────────────────────────────────────────────────────
+
+final pricingRulesProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>(
+  (ref, courtId) => PricingService.getRules(courtId),
+);
+
+// ─── Recurring Reservations ───────────────────────────────────────────────────
+
+final recurringReservationsProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>(
+  (ref, courtId) => RecurringService.getRecurring(courtId),
+);
+
+// ─── Customers ────────────────────────────────────────────────────────────────
+
+final customersProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>(
+  (ref, courtId) => CustomerService.getCustomers(courtId),
+);
+
+typedef CustomerHistoryArgs = ({String courtId, String phone});
+
+final customerHistoryProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, CustomerHistoryArgs>(
+  (ref, args) => CustomerService.getBookingHistory(args.courtId, args.phone),
+);
+
+// ─── Tournaments ─────────────────────────────────────────────────────────────
+
+final tournamentsProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>(
+  (ref, courtId) => TournamentService.getTournaments(courtId),
+);
+
+final tournamentRegistrantsProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>(
+  (ref, tournamentId) => TournamentService.getRegistrants(tournamentId),
+);
+
+// ─── Staff accounts ───────────────────────────────────────────────────────────
+
+final staffProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>(
+  (ref, courtId) => StaffService.getStaff(courtId),
 );
 
 // ─── Court settings ───────────────────────────────────────────────────────────

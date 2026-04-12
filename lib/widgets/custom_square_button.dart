@@ -3,29 +3,29 @@ import 'package:flutter/material.dart';
 class CustomSquareButton extends StatelessWidget {
   final VoidCallback onTap;
   final String text;
+  final IconData icon;
   final Color color;
   final double size;
-  final String assetPath;
 
   const CustomSquareButton({
     super.key,
     required this.onTap,
     required this.text,
-    //this.color = const Color(0xFFDCEDC8),
+    required this.icon,
     this.color = const Color(0xFFC8E6C9),
     this.size = 100.0,
-    required this.assetPath,
   });
 
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      cursor: SystemMouseCursors.click, // Change to desired cursor type
+      cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(15.0),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 width: size,
@@ -34,17 +34,12 @@ class CustomSquareButton extends StatelessWidget {
                   color: color,
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                  child: Image.asset(
-                    assetPath,
-                    width: size,
-                    height: size,
-                    fit: BoxFit.cover,
-                  ),
+                child: Icon(
+                  icon,
+                  size: size * 0.45,
+                  color: const Color(0xFF068631),
                 ),
               ),
-
               const SizedBox(height: 10),
               Text(
                 text,

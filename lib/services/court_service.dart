@@ -25,14 +25,16 @@ class CourtService {
 
   /// Fetches the court for the authenticated [userId] via court_managers.
   /// Returns null if the user has no linked court.
+  /// The returned [AdminCourt.role] reflects the user's role (owner/staff/coach).
   static Future<AdminCourt?> getCourtForUser(String userId) async {
     final cm = await _client
         .from('court_managers')
-        .select('court_id')
+        .select('court_id, role')
         .eq('user_id', userId)
         .maybeSingle();
     if (cm == null) return null;
-    return getFullCourt(cm['court_id'] as String);
+    final court = await getFullCourt(cm['court_id'] as String);
+    return court.copyWith(role: cm['role'] as String? ?? 'owner');
   }
 
   /// Fetches the full court record by [courtId].

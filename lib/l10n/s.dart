@@ -32,6 +32,7 @@ class S {
       _t('Sign in again with a court phone number to continue.',
           'سجّل الدخول مجدداً برقم هاتف الملعب للمتابعة.');
   String get backToLogin => _t('Back To Login', 'العودة لتسجيل الدخول');
+  String get signOut => _t('Sign Out', 'تسجيل الخروج');
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   String get adminPortal => _t('Admin Portal', 'بوابة المشرف');
@@ -351,4 +352,168 @@ class S {
           'Users cannot book on this date. '
           'You can still add a booking as an override.',
           'هذا اليوم محدد كيوم إجازة. لا يمكن للمستخدمين الحجز في هذا التاريخ. يمكنك إضافة حجز كاستثناء.');
+
+  // ── Tournaments ───────────────────────────────────────────────────────────
+  String get tournaments => _t('Tournaments', 'البطولات');
+  String get createTournament => _t('Create Tournament', 'إنشاء بطولة');
+  String get noTournaments =>
+      _t('No tournaments yet. Tap + to create one.',
+          'لا توجد بطولات بعد. اضغط + لإنشاء واحدة.');
+  String get tournamentTitle => _t('Title', 'العنوان');
+  String get tournamentDescription => _t('Description', 'الوصف');
+  String get tournamentDate => _t('Date', 'التاريخ');
+  String get tournamentTime => _t('Time', 'الوقت');
+  String get maxParticipants => _t('Max Participants', 'الحد الأقصى للمشاركين');
+  String get entryFee => _t('Entry Fee (JOD)', 'رسوم الدخول (د.أ)');
+  String get prize => _t('Prize', 'الجائزة');
+  String get active => _t('Active', 'نشط');
+  String get tournamentCreated =>
+      _t('Tournament created successfully!', 'تم إنشاء البطولة بنجاح!');
+  String get tournamentCreateError =>
+      _t('Failed to create tournament.', 'فشل إنشاء البطولة.');
+  String get registrants => _t('Registrants', 'المسجلون');
+  String get noRegistrants =>
+      _t('No one has registered yet.', 'لم يسجل أحد بعد.');
+  String registrantCount(int n) =>
+      _ar ? '$n مشارك' : '$n registrant${n == 1 ? '' : 's'}';
+  String get participantName => _t('Name', 'الاسم');
+  String get participantPhone => _t('Phone', 'رقم الهاتف');
+  String tournamentSubtitle(String date, String time, int count) => _ar
+      ? '$date الساعة $time — $count مشارك'
+      : '$date at $time — $count registrant${count == 1 ? '' : 's'}';
+  String get selectDate => _t('Select Date', 'اختر التاريخ');
+  String get selectTime => _t('Select Time', 'اختر الوقت');
+  String get titleRequired => _t('Title is required', 'العنوان مطلوب');
+  String get excelDownloaded =>
+      _t('Excel report downloaded.', 'تم تنزيل تقرير Excel.');
+
+  // ── Promo Codes ───────────────────────────────────────────────────────────
+  String get promoCodes => _t('Promo Codes', 'رموز الخصم');
+  String get createPromoCode => _t('Create Code', 'إنشاء رمز');
+  String get noPromoCodes =>
+      _t('No promo codes yet. Tap + to create one.',
+          'لا توجد رموز خصم بعد. اضغط + لإنشاء واحد.');
+  String get promoCode => _t('Code', 'الرمز');
+  String get promoCodeHint => _t('e.g. SUMMER20', 'مثال: SUMMER20');
+  String get discountType => _t('Discount Type', 'نوع الخصم');
+  String get percentOff => _t('Percentage (%)', 'نسبة مئوية (%)');
+  String get fixedAmount => _t('Fixed Amount (JOD)', 'مبلغ ثابت (د.أ)');
+  String get discountValue => _t('Discount Value', 'قيمة الخصم');
+  String get maxUses => _t('Max Uses (leave blank = unlimited)', 'الحد الأقصى للاستخدام (اتركه فارغاً = غير محدود)');
+  String get validFrom => _t('Valid From (optional)', 'صالح من (اختياري)');
+  String get validUntil => _t('Valid Until (optional)', 'صالح حتى (اختياري)');
+  String get promoCreated => _t('Promo code created.', 'تم إنشاء رمز الخصم.');
+  String get promoDeleted => _t('Promo code deleted.', 'تم حذف رمز الخصم.');
+  String get promoActivated => _t('Code activated.', 'تم تفعيل الرمز.');
+  String get promoDeactivated => _t('Code deactivated.', 'تم تعطيل الرمز.');
+  String get deletePromo => _t('Delete Code', 'حذف الرمز');
+  String get confirmDeletePromo => _t('Delete this promo code?', 'حذف رمز الخصم هذا؟');
+  String get codeCopied => _t('Code copied!', 'تم نسخ الرمز!');
+  String get unlimited => _t('Unlimited', 'غير محدود');
+  String get usesLabel => _t('uses', 'استخدام');
+  String promoDiscount(String type, double val) => type == 'percent'
+      ? _t('${val.toStringAsFixed(0)}% off', 'خصم ${val.toStringAsFixed(0)}%')
+      : _t('${val.toStringAsFixed(2)} JOD off', 'خصم ${val.toStringAsFixed(2)} د.أ');
+  String promoUsage(int uses, int? max) => max == null
+      ? _t('$uses / ∞ uses', '$uses / ∞ استخدام')
+      : _t('$uses / $max uses', '$uses / $max استخدام');
+  String get expires => _t('Expires', 'تنتهي');
+  String get startsOn => _t('Starts', 'تبدأ');
+
+  // ── Customers ─────────────────────────────────────────────────────────────
+  String get customers => _t('Customers', 'العملاء');
+  String get searchCustomers => _t('Search by name or phone…', 'ابحث باسم أو هاتف…');
+  String get noCustomers => _t('No customers yet.', 'لا يوجد عملاء بعد.');
+  String get noMatchingCustomers => _t('No customers match your search.', 'لا يوجد عملاء مطابقون.');
+  String get totalSpend => _t('Total Spend', 'إجمالي الإنفاق');
+  String get bookingHistory => _t('Booking History', 'سجل الحجوزات');
+  String get noBookingHistory => _t('No bookings found.', 'لا توجد حجوزات.');
+  String get firstVisit => _t('First visit', 'أول زيارة');
+  String get lastVisit => _t('Last visit', 'آخر زيارة');
+  String bookingCountLabel(int n) =>
+      _ar ? '$n حجز' : '$n booking${n == 1 ? '' : 's'}';
+  String totalSpendAmount(double amount) =>
+      _ar ? '${amount.toStringAsFixed(2)} د.أ' : '${amount.toStringAsFixed(2)} JOD';
+  String get customerSince => _t('Customer since', 'عميل منذ');
+
+  // ── Pricing Rules ─────────────────────────────────────────────────────────
+  String get pricing => _t('Pricing', 'التسعير');
+  String get pricingRules => _t('Pricing Rules', 'قواعد التسعير');
+  String get createPricingRule => _t('Create Rule', 'إنشاء قاعدة');
+  String get noPricingRules =>
+      _t('No pricing rules. Tap + to add one.', 'لا توجد قواعد تسعير. اضغط + للإضافة.');
+  String get ruleLabel => _t('Rule Name', 'اسم القاعدة');
+  String get ruleLabelHint => _t('e.g. Weekend Rate', 'مثال: سعر نهاية الأسبوع');
+  String get ruleType => _t('Rule Type', 'نوع القاعدة');
+  String get recurringDays => _t('Recurring (specific days)', 'متكرر (أيام محددة)');
+  String get oneOffDate => _t('One-off (specific date)', 'مرة واحدة (تاريخ محدد)');
+  String get selectDays => _t('Select Days', 'اختر الأيام');
+  String get priceOneHour => _t('1-Hour Price (JOD)', 'سعر الساعة (د.أ)');
+  String get priceTwoHours => _t('2-Hour Price (JOD)', 'سعر الساعتين (د.أ)');
+  String get ruleCreated => _t('Pricing rule created.', 'تم إنشاء قاعدة التسعير.');
+  String get ruleDeleted => _t('Rule deleted.', 'تم حذف القاعدة.');
+  String get deleteRule => _t('Delete Rule', 'حذف القاعدة');
+  String get confirmDeleteRule =>
+      _t('Delete this pricing rule?', 'حذف هذه القاعدة؟');
+  String get basePrice => _t('Base Price', 'السعر الأساسي');
+  String get specialPrice => _t('Special Price', 'سعر خاص');
+  String get appliesOn => _t('Applies on', 'يطبق في');
+  String get sunday => _t('Sun', 'أحد');
+  String get monday => _t('Mon', 'اثنين');
+  String get tuesday => _t('Tue', 'ثلاثاء');
+  String get wednesday => _t('Wed', 'أربعاء');
+  String get thursday => _t('Thu', 'خميس');
+  String get friday => _t('Fri', 'جمعة');
+  String get saturday => _t('Sat', 'سبت');
+  List<String> get weekdayShort =>
+      [sunday, monday, tuesday, wednesday, thursday, friday, saturday];
+
+  // ── Staff Accounts ────────────────────────────────────────────────────────
+  String get staffAccounts => _t('Staff & Coaches', 'الموظفون والمدربون');
+  String get noStaff =>
+      _t('No staff members yet. Tap "Add" to invite someone.',
+          'لا يوجد موظفون بعد. اضغط "إضافة" لدعوة شخص.');
+  String get addStaffMember => _t('Add Staff Member', 'إضافة موظف');
+  String get staffName => _t('Name', 'الاسم');
+  String get staffPhone => _t('Phone Number', 'رقم الهاتف');
+  String get staffRole => _t('Role', 'الدور');
+  String get roleStaff => _t('Staff', 'موظف');
+  String get roleCoach => _t('Coach', 'مدرب');
+  String get staffInviteSent =>
+      _t('Invite sent. They can now log in with this number.',
+          'تم إرسال الدعوة. يمكنهم الآن تسجيل الدخول بهذا الرقم.');
+  String get staffRemoved => _t('Staff member removed.', 'تم إزالة الموظف.');
+  String get inviteRevoked => _t('Invite revoked.', 'تم إلغاء الدعوة.');
+  String get pendingInvite => _t('Pending invite', 'دعوة معلقة');
+  String get revokeInvite => _t('Revoke invite', 'إلغاء الدعوة');
+  String get removeStaff => _t('Remove member', 'إزالة العضو');
+  String get confirmRemoveStaff =>
+      _t('Remove this staff member? They will lose access immediately.',
+          'إزالة هذا الموظف؟ سيفقد الوصول فوراً.');
+  String get confirmRevokeInvite =>
+      _t('Revoke this invite? The person will no longer be able to log in.',
+          'إلغاء هذه الدعوة؟ لن يتمكن الشخص من تسجيل الدخول بعد الآن.');
+  String get staffPhoneHint => _t('07X XXX XXXX', '07X XXX XXXX');
+  String get staffAccessNote =>
+      _t('Staff can view reservations, customers & tournaments — but not financials, pricing or promo codes.',
+          'يمكن للموظفين عرض الحجوزات والعملاء والبطولات — لكن ليس الشؤون المالية أو التسعير أو رموز الخصم.');
+
+  // ── Recurring Reservations ────────────────────────────────────────────────
+  String get recurringReservations => _t('Recurring', 'الحجوزات المتكررة');
+  String get noRecurring =>
+      _t('No recurring reservations. Tap + to add one.',
+          'لا توجد حجوزات متكررة. اضغط + للإضافة.');
+  String get createRecurring => _t('Create Recurring', 'إنشاء متكرر');
+  String get dayOfWeek => _t('Day of Week', 'يوم الأسبوع');
+  String get startDate => _t('Start Date', 'تاريخ البدء');
+  String get endDate => _t('End Date (optional)', 'تاريخ الانتهاء (اختياري)');
+  String get fieldNumber => _t('Field Number', 'رقم الملعب');
+  String get recurringCreated =>
+      _t('Recurring reservation created and scheduled.',
+          'تم إنشاء الحجز المتكرر وجدولته.');
+  String get recurringDeleted => _t('Recurring reservation deleted.', 'تم حذف الحجز المتكرر.');
+  String recurringScheduled(int n) =>
+      _ar ? 'تم جدولة $n حجز قادم' : '$n upcoming booking${n == 1 ? '' : 's'} scheduled';
+  String recurringSubtitle(String day, String time, String size, String name) =>
+      _ar ? '$day الساعة $time · $size · $name' : '$day at $time · $size · $name';
 }

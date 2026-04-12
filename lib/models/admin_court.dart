@@ -11,6 +11,8 @@ class AdminCourt {
   final String? imageUrl;
   final String? image2Url;
   final String? image3Url;
+  /// Role of the currently logged-in user for this court: 'owner' or 'staff' / 'coach'.
+  final String role;
 
   const AdminCourt({
     required this.id,
@@ -24,7 +26,10 @@ class AdminCourt {
     this.imageUrl,
     this.image2Url,
     this.image3Url,
+    this.role = 'owner',
   });
+
+  bool get isOwner => role == 'owner';
 
   factory AdminCourt.fromMap(Map<String, dynamic> map) {
     return AdminCourt(
@@ -42,6 +47,22 @@ class AdminCourt {
       imageUrl: map['image_url'] as String?,
       image2Url: map['image2_url'] as String?,
       image3Url: map['image3_url'] as String?,
+      role: map['role'] as String? ?? 'owner',
     );
   }
+
+  AdminCourt copyWith({String? role}) => AdminCourt(
+        id: id,
+        name: name,
+        phone: phone,
+        location: location,
+        category: category,
+        startTime: startTime,
+        endTime: endTime,
+        workingDays: workingDays,
+        imageUrl: imageUrl,
+        image2Url: image2Url,
+        image3Url: image3Url,
+        role: role ?? this.role,
+      );
 }

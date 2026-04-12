@@ -3,9 +3,11 @@ import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
+import 'package:ehjez_admin/constants.dart';
 import 'package:ehjez_admin/models/admin_court.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:ehjez_admin/services/court_service.dart';
+import 'package:ehjez_admin/services/staff_service.dart';
 import 'package:ehjez_admin/l10n/s.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -520,6 +522,8 @@ class _SettingsFormState extends State<_SettingsForm> {
                   const SizedBox(height: 16),
                   _photosCard(),
                   const SizedBox(height: 16),
+                  _StaffCard(courtId: widget.courtId),
+                  const SizedBox(height: 16),
                   _vacationDaysButton(),
                 ],
               ),
@@ -973,6 +977,411 @@ class _SettingsFormState extends State<_SettingsForm> {
             style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Staff Card ───────────────────────────────────────────────────────────────
+
+class _StaffCard extends ConsumerStatefulWidget {
+  final String courtId;
+  const _StaffCard({required this.courtId});
+
+  @override
+  ConsumerState<_StaffCard> createState() => _StaffCardState();
+}
+
+class _StaffCardState extends ConsumerState<_StaffCard> {
+  @override
+  void initState() {
+    super.initState();
+    // Always fetch fresh data when settings is opened — prevents showing a
+    // stale "pending" invite after the staff member has already logged in.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(staffProvider(widget.courtId));
+    });
+  }
+
+  bool _isValidJordanianNumber(String number) =>
+      RegExp(r'^(?:962|0)7[789]\d{7}$').hasMatch(number);
+
+  String _normalizePhone(String number) {
+    if (number.startsWith('0')) return number.replaceFirst('0', '962');
+    if (number.startsWith('7')) return '962$number';
+    return number.trim();
+  }
+
+  // ── Add staff dialog ──────────────────────────────────────────────────────
+
+  Future<void> _showAddDialog() async {
+    final s = S.of(context);
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    String selectedRole = 'staff';
+    String? phoneError;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setLocal) {
+          return AlertDialog(
+            title: Text(s.addStaffMember),
+            content: SizedBox(
+              width: 360,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Access note
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade100),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline,
+                            size: 16, color: Colors.blue.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            s.staffAccessNote,
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.blue.shade800),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Name
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: InputDecoration(
+                      labelText: s.staffName,
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Phone
+                  TextField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    onChanged: (_) {
+                      if (phoneError != null) {
+                        setLocal(() => phoneError = null);
+                      }
+                    },
+                    decoration: InputDecoration(
+                      labelText: s.staffPhone,
+                      hintText: s.staffPhoneHint,
+                      border: const OutlineInputBorder(),
+                      errorText: phoneError,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Role dropdown
+                  DropdownButtonFormField<String>(
+                    value: selectedRole,
+                    decoration: InputDecoration(
+                      labelText: s.staffRole,
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                          value: 'staff', child: Text(s.roleStaff)),
+                      DropdownMenuItem(
+                          value: 'coach', child: Text(s.roleCoach)),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setLocal(() => selectedRole = v);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(s.cancel),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ehjezGreen,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  final phone = phoneCtrl.text.trim();
+                  if (!_isValidJordanianNumber(phone)) {
+                    setLocal(() => phoneError = s.invalidJordanianNumber);
+                    return;
+                  }
+                  final normalized = _normalizePhone(phone);
+                  Navigator.of(ctx).pop();
+                  await _invite(
+                    name: nameCtrl.text.trim(),
+                    phone: normalized,
+                    role: selectedRole,
+                  );
+                },
+                child: Text(s.addStaffMember),
+              ),
+            ],
+          );
+        });
+      },
+    );
+    nameCtrl.dispose();
+    phoneCtrl.dispose();
+  }
+
+  Future<void> _invite({
+    required String name,
+    required String phone,
+    required String role,
+  }) async {
+    final s = S.of(context);
+    try {
+      await StaffService.inviteStaff(
+        courtId: widget.courtId,
+        phone: phone,
+        name: name,
+        role: role,
+      );
+      ref.invalidate(staffProvider(widget.courtId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(s.staffInviteSent),
+            backgroundColor: ehjezGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // ── Remove active staff ───────────────────────────────────────────────────
+
+  Future<void> _removeEntry(Map<String, dynamic> entry) async {
+    final s = S.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.removeStaff),
+        content: Text(s.confirmRemoveStaff),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(s.cancel),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(s.removeStaff),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      if (entry['user_id'] != null) {
+        await StaffService.removeStaff(
+            widget.courtId, entry['user_id'] as String);
+      } else {
+        await StaffService.revokeInvite(entry['invite_id'] as int);
+      }
+      ref.invalidate(staffProvider(widget.courtId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.staffRemoved)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final staffAsync = ref.watch(staffProvider(widget.courtId));
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Section header
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    s.staffAccounts,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF068631),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Refresh',
+                  icon: const Icon(Icons.refresh, size: 18),
+                  color: Colors.grey.shade500,
+                  onPressed: () => ref.invalidate(staffProvider(widget.courtId)),
+                ),
+                const SizedBox(width: 4),
+                OutlinedButton.icon(
+                  onPressed: _showAddDialog,
+                  icon: const Icon(Icons.person_add_outlined, size: 16),
+                  label: Text(s.addStaffMember,
+                      style: const TextStyle(fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: ehjezGreen,
+                    side: const BorderSide(color: Color(0xFF068631)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            staffAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Text('Error: $e',
+                  style: const TextStyle(color: Colors.red)),
+              data: (staff) {
+                if (staff.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      s.noStaff,
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  );
+                }
+                return Column(
+                  children: staff.map((m) => _staffTile(
+                        name: (m['name'] as String).isNotEmpty
+                            ? m['name'] as String
+                            : m['phone'] as String,
+                        phone: m['phone'] as String,
+                        role: m['role'] as String,
+                        onRemove: () => _removeEntry(m),
+                      )).toList(),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _staffTile({
+    required String name,
+    required String phone,
+    required String role,
+    required VoidCallback onRemove,
+  }) {
+    final s = S.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: ehjezGreen.withValues(alpha: 0.15),
+            child: Text(
+              name.isNotEmpty ? name[0].toUpperCase() : '?',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: ehjezGreen,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 14)),
+                Text(phone,
+                    style: TextStyle(
+                        fontSize: 12, color: Colors.grey.shade600)),
+              ],
+            ),
+          ),
+          _roleBadge(role),
+          const SizedBox(width: 4),
+          IconButton(
+            tooltip: s.removeStaff,
+            icon: const Icon(Icons.close, size: 18),
+            color: Colors.red.shade400,
+            onPressed: onRemove,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _roleBadge(String role) {
+    final label = role == 'coach'
+        ? S.of(context).roleCoach
+        : S.of(context).roleStaff;
+    final color =
+        role == 'coach' ? Colors.purple : Colors.blue;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.shade50,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.shade200),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color.shade700,
+        ),
       ),
     );
   }

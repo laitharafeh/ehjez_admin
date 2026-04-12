@@ -1,10 +1,8 @@
 // ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
-import 'dart:convert';
-import 'dart:html' as html;
-
 import 'package:ehjez_admin/constants.dart';
 import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
+import 'package:ehjez_admin/utils/excel_generator.dart';
 import 'package:ehjez_admin/utils/invoice_generator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,36 +44,29 @@ class _AccountingScreenState extends ConsumerState<AccountingScreen> {
     return _month.year == now.year && _month.month == now.month;
   }
 
-  // ── CSV export ───────────────────────────────────────────────────────────────
+  // ── Excel export ─────────────────────────────────────────────────────────────
 
-  void _exportCsv(MonthlyAccountingData data) {
-    final lines = [
-      'Date,Time,Field,Size,Customer,Phone,Price (JOD),Commission (JOD)',
-      ...data.bookings.map((b) {
-        String escape(String s) =>
-            s.contains(',') ? '"$s"' : s;
-        return [
-          b.date,
-          b.startTime,
-          'F${b.fieldNumber}',
-          b.size,
-          escape(b.name.isNotEmpty ? b.name : '—'),
-          b.phone,
-          b.price.toStringAsFixed(2),
-          b.commission.toStringAsFixed(2),
-        ].join(',');
-      }),
-    ];
-    final bytes = utf8.encode(lines.join('\n'));
-    final blob = html.Blob([bytes], 'text/csv');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    html.AnchorElement(href: url)
-      ..setAttribute(
-        'download',
-        'bookings_${_month.year}_${_month.month.toString().padLeft(2, '0')}.csv',
-      )
-      ..click();
-    html.Url.revokeObjectUrl(url);
+  void _exportExcel(MonthlyAccountingData data) {
+    try {
+      ExcelGenerator.generateAndDownload(
+        data: data,
+        year: _month.year,
+        month: _month.month,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(S.of(context).excelDownloaded),
+          backgroundColor: ehjezGreen,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Excel export failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   // ── PDF invoice ──────────────────────────────────────────────────────────────
@@ -119,7 +110,7 @@ class _AccountingScreenState extends ConsumerState<AccountingScreen> {
           isCurrentMonth: _isCurrentMonth,
           onPrev: _prevMonth,
           onNext: _isCurrentMonth ? null : _nextMonth,
-          onCsv: () => _exportCsv(data),
+          onCsv: () => _exportExcel(data),
           onPdf: () => _generatePdf(data),
         ),
       ),
@@ -248,7 +239,8 @@ class _MonthHeader extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: onCsv,
           icon: const Icon(Icons.table_chart_outlined, size: 16),
-          label: const Text('CSV'),
+          label: const Text('CSV / Excel'),
+          style: OutlinedButton.styleFrom(foregroundColor: Colors.green.shade800),
         ),
         const SizedBox(width: 8),
         ElevatedButton.icon(

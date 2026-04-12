@@ -1,6 +1,7 @@
 import 'package:ehjez_admin/constants.dart';
 import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/services/court_service.dart';
+import 'package:ehjez_admin/services/pricing_service.dart';
 import 'package:ehjez_admin/services/reservation_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -43,6 +44,9 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
   String? _selectedSize;
   int? _numberOfFields;
 
+  // Active pricing rule override for the selected date
+  Map<String, dynamic>? _activePricingRule;
+
   // Vacation days — specific dates the court is closed
   Set<DateTime> _vacationDays = {};
 
@@ -58,6 +62,14 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
 
   bool _isVacationDay(DateTime day) =>
       _vacationDays.contains(_normaliseDate(day));
+
+  int _effectivePrice(int duration) {
+    if (_activePricingRule != null) {
+      final key = duration == 1 ? 'price1' : 'price2';
+      return (_activePricingRule![key] as num?)?.toInt() ?? 0;
+    }
+    return _courtPrices[_selectedSize!]?[duration] ?? 0;
+  }
 
   Future<void> _showConfirmationDialog(
     BuildContext context,
@@ -81,10 +93,24 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
                   Text(s.confirmTime(startTime.format(ctx))),
                   Text(s.confirmDurationLabel(_selectedDuration)),
                   Text(s.confirmSize(_selectedSize ?? '')),
-                  Text(
-                    s.confirmPrice(
-                        _courtPrices[_selectedSize!]?[_selectedDuration] ?? 0),
-                  ),
+                  if (_activePricingRule != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Text(
+                        '${S.of(ctx).specialPrice}: ${_activePricingRule!['rule_label']}',
+                        style: TextStyle(
+                            color: Colors.orange.shade800,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  Text(s.confirmPrice(_effectivePrice(_selectedDuration))),
                   TextField(
                     controller: nameController,
                     decoration: InputDecoration(labelText: s.nameField),
@@ -122,7 +148,7 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
           size: _selectedSize!,
           name: nameController.text.trim(),
           phone: phoneController.text.trim(),
-          price: _courtPrices[_selectedSize!]?[_selectedDuration] ?? 0,
+          price: _effectivePrice(_selectedDuration),
         );
 
         if (!context.mounted) return;
@@ -223,6 +249,18 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
           .add(const Duration(days: 1));
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchPricingRule() async {
+    if (_selectedDay == null || _selectedSize == null) return;
+    final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDay!);
+    try {
+      final rule = await PricingService.getEffectivePrice(
+          widget.courtId, _selectedSize!, dateStr);
+      if (mounted) setState(() => _activePricingRule = rule);
+    } catch (_) {
+      if (mounted) setState(() => _activePricingRule = null);
     }
   }
 
@@ -452,8 +490,10 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
                       setState(() {
                         _selectedSize = size;
                         _numberOfFields = _courtSizes[size];
+                        _activePricingRule = null;
                       });
                       _fetchReservations();
+                      _fetchPricingRule();
                     },
                     child: Card(
                       elevation: 4,
@@ -493,8 +533,10 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
                 _selectedDay = selectedDay;
                 _focusedDay = focusedDay;
                 _selectedSlotTime = null;
+                _activePricingRule = null;
               });
               widget.onSelectionReset?.call();
+              _fetchPricingRule();
             },
             eventLoader: (day) =>
                 _reservations[DateTime(day.year, day.month, day.day)] ?? [],
@@ -557,6 +599,35 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
                       s.vacationDayWarning,
                       style: TextStyle(
                           color: Colors.red.shade700, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Pricing rule banner
+          if (_activePricingRule != null)
+            Container(
+              margin:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.local_offer_outlined,
+                      color: Colors.orange.shade700, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${s.specialPrice}: ${_activePricingRule!['rule_label']}  ·  '
+                      '1h: ${(_activePricingRule!['price1'] as num).toInt()} JOD  '
+                      '2h: ${(_activePricingRule!['price2'] as num).toInt()} JOD',
+                      style: TextStyle(
+                          color: Colors.orange.shade800, fontSize: 12),
                     ),
                   ),
                 ],

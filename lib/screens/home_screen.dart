@@ -20,6 +20,7 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: kToolbarHeight + 40,
+        centerTitle: true,
         leading: const _LangToggle(),
         title: Text(
           'ehjez',
@@ -31,13 +32,21 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          if (courtAsync.valueOrNull != null)
+          if (courtAsync.valueOrNull?.isOwner == true)
             IconButton(
               tooltip: s.courtSettings,
               icon: const Icon(Icons.settings_outlined),
               onPressed: () =>
                   context.push('/settings/${courtAsync.value!.id}'),
             ),
+          IconButton(
+            tooltip: s.signOut,
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService.signOut();
+              // go_router's auth listener automatically redirects to /login
+            },
+          ),
         ],
       ),
       body: courtAsync.when(
@@ -93,6 +102,46 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+// ── Button grid (responsive: max 6 per row, fewer on smaller screens) ─────────
+
+class _ButtonGrid extends StatelessWidget {
+  final List<Widget> buttons;
+  const _ButtonGrid({required this.buttons});
+
+  // Each button is 100px + 15px padding on each side = 130px
+  static const double _buttonWidth = 130;
+  static const int _maxPerRow = 6;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final perRow = (constraints.maxWidth / _buttonWidth)
+            .floor()
+            .clamp(1, _maxPerRow);
+
+        final rows = <List<Widget>>[];
+        for (var i = 0; i < buttons.length; i += perRow) {
+          final end = (i + perRow).clamp(0, buttons.length);
+          rows.add(buttons.sublist(i, end));
+        }
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: rows
+              .map(
+                (row) => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: row,
+                ),
+              )
+              .toList(),
+        );
+      },
+    );
+  }
+}
+
 // ── Language toggle ────────────────────────────────────────────────────────────
 
 class _LangToggle extends ConsumerWidget {
@@ -128,39 +177,90 @@ class _HomeBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = S.of(context);
+    final isOwner = court.isOwner;
     return Center(
       child: Column(
         children: [
           const SizedBox(height: 10),
-          Text(
-            court.name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.black54,
-            ),
-          ),
-          const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CustomSquareButton(
-                onTap: () => context.push('/reservations'),
-                text: s.reservations,
-                assetPath: 'assets/reservation_icon.png',
+              Text(
+                court.name,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black54,
+                ),
               ),
+              if (!isOwner) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Text(
+                    court.role[0].toUpperCase() + court.role.substring(1),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 10),
+          _ButtonGrid(buttons: [
+            // ── Always visible ──────────────────────────────────────────────
+            CustomSquareButton(
+              onTap: () => context.push('/reservations'),
+              text: s.reservations,
+              icon: Icons.calendar_month_outlined,
+            ),
+            CustomSquareButton(
+              onTap: () => context.push('/tournaments/${court.id}'),
+              text: s.tournaments,
+              icon: Icons.emoji_events_outlined,
+            ),
+            CustomSquareButton(
+              onTap: () => context.push('/customers/${court.id}'),
+              text: s.customers,
+              icon: Icons.people_outline,
+            ),
+            // ── Owner-only ──────────────────────────────────────────────────
+            if (isOwner) ...[
               CustomSquareButton(
                 onTap: () => context.push('/accounting/${court.id}'),
                 text: s.finances,
-                assetPath: 'assets/accounting_icon.png',
+                icon: Icons.account_balance_wallet_outlined,
               ),
               CustomSquareButton(
                 onTap: () => context.push('/analytics/${court.id}'),
                 text: s.analytics,
-                assetPath: 'assets/marketing_icon.png',
+                icon: Icons.bar_chart_outlined,
+              ),
+              CustomSquareButton(
+                onTap: () => context.push('/pricing/${court.id}'),
+                text: s.pricing,
+                icon: Icons.sell_outlined,
+              ),
+              CustomSquareButton(
+                onTap: () => context.push('/recurring/${court.id}'),
+                text: s.recurringReservations,
+                icon: Icons.repeat,
+              ),
+              CustomSquareButton(
+                onTap: () => context.push('/promo/${court.id}'),
+                text: s.promoCodes,
+                icon: Icons.local_offer_outlined,
               ),
             ],
-          ),
+          ]),
         ],
       ),
     );

@@ -3,14 +3,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthService {
   static final _client = Supabase.instance.client;
 
-  /// Returns true if the [phone] number is linked to a registered court.
+  /// Returns true if [phone] belongs to a court owner OR has a pending staff invite.
   static Future<bool> courtExistsForPhone(String phone) async {
     final result = await _client
-        .from('courts')
-        .select('id')
-        .eq('phone', phone)
-        .maybeSingle();
-    return result != null;
+        .rpc('phone_has_court_access', params: {'p_phone': phone});
+    return result == true;
   }
 
   /// Sends an OTP SMS to [phone].
@@ -25,15 +22,6 @@ class AuthService {
       token: token,
       phone: phone,
     );
-  }
-
-  /// Creates a user record on first login and links the user to their court
-  /// via the court_managers table (upsert so repeat calls are safe).
-  static Future<void> ensureUserRecord(String userId, String phone) async {
-    await _client.from('users').upsert({'id': userId, 'phone': phone});
-    // Populate court_managers for this user if not already present.
-    // Uses a SECURITY DEFINER RPC so it can safely read auth.users.
-    await _client.rpc('ensure_court_manager');
   }
 
   /// Signs the current user out.
