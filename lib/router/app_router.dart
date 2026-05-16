@@ -9,6 +9,7 @@ import '../screens/auth/otp_screen.dart';
 import '../screens/dispatch_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/super_admin/super_admin_home_screen.dart';
+import '../screens/super_admin/super_admin_court_screen.dart';
 import '../screens/reservations_screen.dart';
 import '../screens/accounting_screen.dart';
 import '../screens/vacation_days_screen.dart';
@@ -79,6 +80,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/super-admin',
       builder: (context, state) => const SuperAdminHomeScreen(),
+    ),
+    GoRoute(
+      path: '/super-admin/courts/:courtId',
+      builder: (context, state) => SuperAdminCourtScreen(
+        courtId: state.pathParameters['courtId']!,
+      ),
     ),
     GoRoute(
       path: '/reservations',

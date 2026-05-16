@@ -144,6 +144,16 @@ class CourtService {
     return _client.storage.from('court-images').getPublicUrl(path);
   }
 
+  /// Fetches id, name, and image_url for every court. Used by the super-admin
+  /// courts grid.
+  static Future<List<Map<String, dynamic>>> getAllCourts() async {
+    final response = await _client
+        .from('courts')
+        .select('id, name, image_url')
+        .order('name');
+    return List<Map<String, dynamic>>.from(response as List);
+  }
+
   /// Fetches just the display name for [courtId].
   static Future<String?> getCourtName(String courtId) async {
     final response = await _client

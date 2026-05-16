@@ -43,6 +43,12 @@ final isSuperAdminProvider = FutureProvider<bool>((ref) async {
   return result != null;
 });
 
+// ─── All courts (super-admin) ──────────────────────────────────────────────────
+
+final allCourtsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) {
+  return CourtService.getAllCourts();
+});
+
 // ─── Current court ─────────────────────────────────────────────────────────────
 //
 // Fetched once per session. Every screen that needs courtId / courtName
