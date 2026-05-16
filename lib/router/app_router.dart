@@ -6,7 +6,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/otp_screen.dart';
+import '../screens/dispatch_screen.dart';
 import '../screens/home_screen.dart';
+import '../screens/super_admin/super_admin_home_screen.dart';
 import '../screens/reservations_screen.dart';
 import '../screens/accounting_screen.dart';
 import '../screens/vacation_days_screen.dart';
@@ -72,7 +74,11 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/',
-      builder: (context, state) => const HomeScreen(),
+      builder: (context, state) => const DispatchScreen(),
+    ),
+    GoRoute(
+      path: '/super-admin',
+      builder: (context, state) => const SuperAdminHomeScreen(),
     ),
     GoRoute(
       path: '/reservations',

@@ -26,6 +26,23 @@ final currentUserProvider = Provider<User?>((ref) {
   return auth.whenData((state) => state.session?.user).value;
 });
 
+// ─── Super admin ──────────────────────────────────────────────────────────────
+//
+// Checked once per session immediately after login. Returns true if the
+// logged-in user has a row in public.super_admins.
+
+final isSuperAdminProvider = FutureProvider<bool>((ref) async {
+  ref.watch(authStateProvider); // re-run on login / logout
+  final user = Supabase.instance.client.auth.currentSession?.user;
+  if (user == null) return false;
+  final result = await Supabase.instance.client
+      .from('super_admins')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+  return result != null;
+});
+
 // ─── Current court ─────────────────────────────────────────────────────────────
 //
 // Fetched once per session. Every screen that needs courtId / courtName
