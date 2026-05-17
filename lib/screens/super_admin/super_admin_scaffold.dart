@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _kSideNavWidth = 220.0;
@@ -67,13 +68,13 @@ class _SideNav extends StatelessWidget {
             color: _kBrandGreen,
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: const Text(
+            child: Text(
               'ehjez',
-              style: TextStyle(
+              style: GoogleFonts.grandstander(
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: 26,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
+                letterSpacing: 0.5,
               ),
             ),
           ),
@@ -161,6 +162,75 @@ class _NavTileState extends State<_NavTile> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── Shared page header ────────────────────────────────────────────────────────
+
+/// Top bar used in every super-admin content column.
+///
+/// Set [showBack] on nested screens (e.g. court detail) to show a ← button
+/// that navigates back to `/super-admin`. A sign-out icon is always shown
+/// on the right.
+class SuperAdminPageHeader extends StatelessWidget {
+  final String title;
+  final bool showBack;
+
+  const SuperAdminPageHeader({
+    super.key,
+    required this.title,
+    this.showBack = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 64,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFE8EBE8), width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          if (showBack)
+            IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new,
+                size: 18,
+                color: Color(0xFF374151),
+              ),
+              onPressed: () => context.go('/super-admin'),
+              tooltip: 'Back to Members',
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            )
+          else
+            const SizedBox(width: 28),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111827),
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(
+              Icons.logout_outlined,
+              size: 20,
+              color: Color(0xFF6B7280),
+            ),
+            onPressed: () async {
+              await Supabase.instance.client.auth.signOut();
+            },
+            tooltip: 'Sign out',
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
     );
   }

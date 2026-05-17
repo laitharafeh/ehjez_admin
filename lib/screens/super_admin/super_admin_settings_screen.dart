@@ -11,25 +11,7 @@ class SuperAdminSettingsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 64,
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            alignment: Alignment.centerLeft,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: Color(0xFFE8EBE8), width: 1),
-              ),
-            ),
-            child: const Text(
-              'Settings',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF111827),
-              ),
-            ),
-          ),
+          const SuperAdminPageHeader(title: 'Settings'),
           const Expanded(
             child: Center(
               child: Text(
