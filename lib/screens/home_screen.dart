@@ -235,11 +235,6 @@ class _HomeBody extends ConsumerWidget {
             // ── Owner-only ──────────────────────────────────────────────────
             if (isOwner) ...[
               CustomSquareButton(
-                onTap: () => context.push('/accounting/${court.id}'),
-                text: s.finances,
-                icon: Icons.account_balance_wallet_outlined,
-              ),
-              CustomSquareButton(
                 onTap: () => context.push('/analytics/${court.id}'),
                 text: s.analytics,
                 icon: Icons.bar_chart_outlined,

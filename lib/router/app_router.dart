@@ -15,7 +15,6 @@ import '../screens/super_admin/super_admin_analytics_screen.dart';
 import '../screens/super_admin/super_admin_billing_screen.dart';
 import '../screens/super_admin/super_admin_settings_screen.dart';
 import '../screens/reservations_screen.dart';
-import '../screens/accounting_screen.dart';
 import '../screens/vacation_days_screen.dart';
 import '../screens/analytics_screen.dart';
 import '../screens/court_settings_screen.dart';
@@ -122,12 +121,6 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/reservations',
       builder: (context, state) => const ReservationsScreen(),
-    ),
-    GoRoute(
-      path: '/accounting/:courtId',
-      builder: (context, state) => AccountingScreen(
-        courtId: state.pathParameters['courtId']!,
-      ),
     ),
     GoRoute(
       path: '/vacation-days/:courtId',
