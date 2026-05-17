@@ -722,7 +722,7 @@ class _CourtAssignmentBoardState extends ConsumerState<CourtAssignmentBoard> {
             child: Wrap(
               spacing: 8,
               children: sizeFields.keys.map((size) {
-                final selected = size == _selectedSize;
+                final selected = size == effectiveSize;
                 return GestureDetector(
                   onTap: () => setState(() {
                     _selectedSize = size;
