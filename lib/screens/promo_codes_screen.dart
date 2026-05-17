@@ -2,6 +2,7 @@ import 'package:ehjez_admin/constants.dart';
 import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:ehjez_admin/services/promo_service.dart';
+import 'package:ehjez_admin/widgets/shimmer_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,7 +26,7 @@ class PromoCodesScreen extends ConsumerWidget {
         child: const Icon(Icons.add),
       ),
       body: codesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _PromoCodesSkeleton(),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (codes) {
           // Summary bar
@@ -610,6 +611,88 @@ class _TypeBtn extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Skeleton loading ──────────────────────────────────────────────────────────
+
+/// Mimics: stats strip (3 chips) + ListView of promo cards
+class _PromoCodesSkeleton extends StatelessWidget {
+  const _PromoCodesSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Stats strip skeleton
+        Container(
+          color: const Color(0xFFEEEEEE),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Row(
+            children: [
+              Expanded(child: ShimmerBox(height: 40, borderRadius: 8)),
+              const SizedBox(width: 16),
+              Expanded(child: ShimmerBox(height: 40, borderRadius: 8)),
+              const SizedBox(width: 16),
+              Expanded(child: ShimmerBox(height: 40, borderRadius: 8)),
+            ],
+          ),
+        ),
+        // Promo card list
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: 5,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (_, __) => const _PromoCardSkeleton(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Mimics the _PromoCard layout:
+/// [code chip area]  [status badge]  spacer  [toggle]  [delete]
+/// ── divider ──
+/// discount value bar + validity bar
+class _PromoCardSkeleton extends StatelessWidget {
+  const _PromoCardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top row: code chip + badge + spacer + toggle + delete
+            Row(
+              children: [
+                ShimmerBox(width: 110, height: 34, borderRadius: 8),
+                const SizedBox(width: 10),
+                ShimmerBox(width: 60, height: 22, borderRadius: 10),
+                const Spacer(),
+                ShimmerBox(width: 40, height: 24, borderRadius: 12),
+                const SizedBox(width: 8),
+                ShimmerBox(width: 24, height: 24, borderRadius: 4),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            // Discount value + validity
+            ShimmerBox(height: 13, width: 140, borderRadius: 4),
+            const SizedBox(height: 8),
+            ShimmerBox(height: 11, width: 200, borderRadius: 4),
           ],
         ),
       ),

@@ -4,6 +4,7 @@ import 'package:ehjez_admin/constants.dart';
 import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:ehjez_admin/services/reservation_service.dart';
+import 'package:ehjez_admin/widgets/shimmer_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -18,7 +19,7 @@ class AnalyticsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(S.of(context).analytics)),
       body: dataAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _AnalyticsSkeleton(),
         error: (e, _) => Center(
           child: Text('Error: $e', style: const TextStyle(color: Colors.red)),
         ),
@@ -400,5 +401,144 @@ class _SizeBreakdown extends StatelessWidget {
 extension _IndexedMap<T> on List<T> {
   List<R> mapIndexed<R>(R Function(int index, T item) f) {
     return List.generate(length, (i) => f(i, this[i]));
+  }
+}
+
+// ─── Skeleton loading ──────────────────────────────────────────────────────────
+
+/// Mimics: 4 summary stat cards (Wrap) → 3 bar-chart sections → size breakdown
+class _AnalyticsSkeleton extends StatelessWidget {
+  const _AnalyticsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section title bar
+          ShimmerBox(height: 16, width: 80, borderRadius: 4),
+          const SizedBox(height: 12),
+          // 4 stat cards in a Wrap
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: List.generate(
+              4,
+              (_) => SizedBox(
+                width: 160,
+                child: Card(
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShimmerBox(height: 11, width: 80, borderRadius: 4),
+                        const SizedBox(height: 10),
+                        ShimmerBox(height: 22, width: 100, borderRadius: 4),
+                        const SizedBox(height: 6),
+                        ShimmerBox(height: 10, width: 90, borderRadius: 4),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Bar chart section × 3 (monthly, peak hours, by weekday)
+          ...List.generate(3, (i) {
+            final heights = [160.0, 120.0, 120.0];
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ShimmerBox(height: 16, width: 140, borderRadius: 4),
+                const SizedBox(height: 16),
+                _SkeletonBarChart(barHeight: heights[i]),
+                const SizedBox(height: 32),
+              ],
+            );
+          }),
+
+          // Size breakdown section
+          ShimmerBox(height: 16, width: 120, borderRadius: 4),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: List.generate(3, (_) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ShimmerBox(height: 13, width: 60, borderRadius: 4),
+                          ShimmerBox(height: 11, width: 100, borderRadius: 4),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ShimmerBox(height: 8, borderRadius: 4),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A row of 6 skeleton bars of random-ish heights, mimicking a bar chart.
+class _SkeletonBarChart extends StatelessWidget {
+  final double barHeight;
+  const _SkeletonBarChart({required this.barHeight});
+
+  @override
+  Widget build(BuildContext context) {
+    // Fixed relative heights to avoid random rebuilds
+    const ratios = [0.6, 1.0, 0.75, 0.85, 0.5, 0.9];
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: ratios.map((r) {
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ShimmerBox(
+                      height: barHeight * r,
+                      borderRadius: 4),
+                  const SizedBox(height: 6),
+                  ShimmerBox(height: 10, width: 28, borderRadius: 4),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 }

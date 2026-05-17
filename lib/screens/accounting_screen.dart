@@ -1,4 +1,5 @@
 // ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
+import 'package:ehjez_admin/widgets/shimmer_box.dart';
 import 'package:ehjez_admin/constants.dart';
 import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
@@ -100,7 +101,7 @@ class _AccountingScreenState extends ConsumerState<AccountingScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(S.of(context).finances)),
       body: dataAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _AccountingSkeleton(),
         error: (e, _) => Center(
           child: Text('Error: $e', style: const TextStyle(color: Colors.red)),
         ),
@@ -630,6 +631,87 @@ class _BookingsTable extends StatelessWidget {
     } catch (_) {
       return hhmm;
     }
+  }
+}
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+class _AccountingSkeleton extends StatelessWidget {
+  const _AccountingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Month header
+              Row(
+                children: [
+                  const ShimmerBox(width: 36, height: 36, borderRadius: 18),
+                  const SizedBox(width: 8),
+                  const Expanded(child: ShimmerBox(height: 18, borderRadius: 6)),
+                  const SizedBox(width: 8),
+                  const ShimmerBox(width: 36, height: 36, borderRadius: 18),
+                  const SizedBox(width: 12),
+                  ShimmerBox(width: 110, height: 36, borderRadius: 8),
+                  const SizedBox(width: 8),
+                  ShimmerBox(width: 80, height: 36, borderRadius: 8),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // 4 summary cards
+              Row(
+                children: List.generate(4, (i) => Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: i < 3 ? 12 : 0),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(children: [
+                              const ShimmerBox(width: 36, height: 36, borderRadius: 8),
+                              const Spacer(),
+                            ]),
+                            const SizedBox(height: 12),
+                            const ShimmerBox(height: 20, borderRadius: 4),
+                            const SizedBox(height: 6),
+                            const ShimmerBox(height: 12, width: 80, borderRadius: 4),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                )),
+              ),
+              const SizedBox(height: 24),
+              // Daily chart block
+              const ShimmerBox(height: 16, width: 140, borderRadius: 4),
+              const SizedBox(height: 12),
+              const ShimmerBox(height: 192, borderRadius: 12),
+              const SizedBox(height: 24),
+              // Size breakdown block
+              const ShimmerBox(height: 16, width: 140, borderRadius: 4),
+              const SizedBox(height: 12),
+              const ShimmerBox(height: 120, borderRadius: 12),
+              const SizedBox(height: 24),
+              // Bookings table block
+              const ShimmerBox(height: 16, width: 180, borderRadius: 4),
+              const SizedBox(height: 12),
+              const ShimmerBox(height: 220, borderRadius: 12),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -3,6 +3,7 @@ import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/providers/providers.dart';
 import 'package:ehjez_admin/services/court_service.dart';
 import 'package:ehjez_admin/services/pricing_service.dart';
+import 'package:ehjez_admin/widgets/shimmer_box.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,7 +26,7 @@ class PricingRulesScreen extends ConsumerWidget {
         child: const Icon(Icons.add),
       ),
       body: rulesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _PricingRulesSkeleton(),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (rules) {
           if (rules.isEmpty) {
@@ -420,6 +421,64 @@ class _TypeBtn extends StatelessWidget {
             fontWeight:
                 selected ? FontWeight.bold : FontWeight.normal,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Skeleton loading ──────────────────────────────────────────────────────────
+
+/// Mimics: Card + ListTile (isThreeLine) with circle + title bar + 2 sub-bars + delete icon
+class _PricingRulesSkeleton extends StatelessWidget {
+  const _PricingRulesSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: 5,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (_, __) => const _PricingRuleSkeletonItem(),
+    );
+  }
+}
+
+/// Card + ListTile skeleton:
+/// circle  |  title bar + sub-bar 1 + sub-bar 2  |  delete-icon box
+class _PricingRuleSkeletonItem extends StatelessWidget {
+  const _PricingRuleSkeletonItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            // Circle avatar
+            ShimmerBox(width: 40, height: 40, borderRadius: 20),
+            const SizedBox(width: 16),
+            // Title + two sub-lines
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ShimmerBox(height: 13, borderRadius: 4),
+                  const SizedBox(height: 7),
+                  ShimmerBox(height: 11, width: 180, borderRadius: 4),
+                  const SizedBox(height: 5),
+                  ShimmerBox(height: 11, width: 130, borderRadius: 4),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Delete icon placeholder
+            ShimmerBox(width: 24, height: 24, borderRadius: 4),
+          ],
         ),
       ),
     );
