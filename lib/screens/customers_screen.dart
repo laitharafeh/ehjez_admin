@@ -31,7 +31,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(s.customers)),
       body: customersAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _CustomerSkeletonScreen(),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (customers) {
           final filtered =
@@ -274,6 +274,156 @@ class _CustomerCard extends StatelessWidget {
         onTap:
             () => context.push('/customers/$courtId/detail', extra: customer),
       ),
+    );
+  }
+}
+
+// ─── Skeleton loading ──────────────────────────────────────────────────────────
+
+/// Full-screen skeleton that mirrors the stats bar + search bar + list layout.
+class _CustomerSkeletonScreen extends StatelessWidget {
+  const _CustomerSkeletonScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Stats bar skeleton
+        Container(
+          color: const Color(0xFFEEEEEE),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(child: _ShimmerBox(height: 58, borderRadius: 10)),
+              const SizedBox(width: 12),
+              Expanded(child: _ShimmerBox(height: 58, borderRadius: 10)),
+              const SizedBox(width: 12),
+              Expanded(child: _ShimmerBox(height: 58, borderRadius: 10)),
+            ],
+          ),
+        ),
+        // Search bar skeleton
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: _ShimmerBox(height: 48, borderRadius: 12),
+        ),
+        // List skeleton
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            itemCount: 7,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (_, __) => const _CustomerSkeletonCard(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Mimics Card + ListTile:
+/// circle  |  name bar + phone bar  |  spend bar + count bar
+class _CustomerSkeletonCard extends StatelessWidget {
+  const _CustomerSkeletonCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            // Circle avatar
+            _ShimmerBox(width: 40, height: 40, borderRadius: 20),
+            const SizedBox(width: 16),
+            // Name + phone
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _ShimmerBox(height: 13, borderRadius: 4),
+                  const SizedBox(height: 7),
+                  _ShimmerBox(height: 11, width: 120, borderRadius: 4),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Spend + booking count (right-aligned)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _ShimmerBox(height: 13, width: 60, borderRadius: 4),
+                const SizedBox(height: 7),
+                _ShimmerBox(height: 11, width: 44, borderRadius: 4),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Single reusable shimmer block. Animates a sweeping light band over grey.
+class _ShimmerBox extends StatefulWidget {
+  final double height;
+  final double? width;
+  final double borderRadius;
+
+  const _ShimmerBox({
+    required this.height,
+    this.width,
+    this.borderRadius = 4,
+  });
+
+  @override
+  State<_ShimmerBox> createState() => _ShimmerBoxState();
+}
+
+class _ShimmerBoxState extends State<_ShimmerBox>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            gradient: LinearGradient(
+              begin: Alignment(-1.5 + _ctrl.value * 3, 0),
+              end: Alignment(-0.8 + _ctrl.value * 3, 0),
+              colors: const [
+                Color(0xFFE0E0E0),
+                Color(0xFFF0F0F0),
+                Color(0xFFE0E0E0),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
