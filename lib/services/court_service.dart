@@ -144,14 +144,32 @@ class CourtService {
     return _client.storage.from('court-images').getPublicUrl(path);
   }
 
-  /// Fetches id, name, and image_url for every court. Used by the super-admin
-  /// courts grid.
+  /// Fetches id, name, image_url, and is_active for every court.
+  /// Used by the super-admin courts grid.
   static Future<List<Map<String, dynamic>>> getAllCourts() async {
     final response = await _client
         .from('courts')
-        .select('id, name, image_url')
+        .select('id, name, image_url, is_active')
         .order('name');
     return List<Map<String, dynamic>>.from(response as List);
+  }
+
+  /// Fetches full detail for a single court (super-admin use).
+  static Future<Map<String, dynamic>> getCourtDetail(String courtId) async {
+    final response = await _client
+        .from('courts')
+        .select('id, name, image_url, is_active')
+        .eq('id', courtId)
+        .single();
+    return Map<String, dynamic>.from(response as Map);
+  }
+
+  /// Activates or deactivates a court (super-admin only).
+  static Future<void> setCourtActive(String courtId, {required bool active}) async {
+    await _client
+        .from('courts')
+        .update({'is_active': active})
+        .eq('id', courtId);
   }
 
   /// Fetches just the display name for [courtId].

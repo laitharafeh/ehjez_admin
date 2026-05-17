@@ -49,6 +49,13 @@ final allCourtsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) {
   return CourtService.getAllCourts();
 });
 
+// ─── Single court detail (super-admin) ────────────────────────────────────────
+
+final courtDetailProvider =
+    FutureProvider.family<Map<String, dynamic>, String>((ref, courtId) {
+  return CourtService.getCourtDetail(courtId);
+});
+
 // ─── Current court ─────────────────────────────────────────────────────────────
 //
 // Fetched once per session. Every screen that needs courtId / courtName
