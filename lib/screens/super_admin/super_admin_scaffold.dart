@@ -17,6 +17,7 @@ const _navItems = [
   _NavItem(Icons.groups_outlined, 'Members', '/super-admin'),
   _NavItem(Icons.calendar_today_outlined, 'Reservations', '/super-admin/reservations'),
   _NavItem(Icons.bar_chart_outlined, 'Analytics', '/super-admin/analytics'),
+  _NavItem(Icons.receipt_long_outlined, 'Billing', '/super-admin/billing'),
   _NavItem(Icons.settings_outlined, 'Settings', '/super-admin/settings'),
 ];
 

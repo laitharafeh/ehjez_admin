@@ -12,6 +12,7 @@ import '../screens/super_admin/super_admin_home_screen.dart';
 import '../screens/super_admin/super_admin_court_screen.dart';
 import '../screens/super_admin/super_admin_reservations_screen.dart';
 import '../screens/super_admin/super_admin_analytics_screen.dart';
+import '../screens/super_admin/super_admin_billing_screen.dart';
 import '../screens/super_admin/super_admin_settings_screen.dart';
 import '../screens/reservations_screen.dart';
 import '../screens/accounting_screen.dart';
@@ -104,6 +105,12 @@ final appRouter = GoRouter(
       path: '/super-admin/analytics',
       pageBuilder: (context, state) => const NoTransitionPage(
         child: SuperAdminAnalyticsScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/super-admin/billing',
+      pageBuilder: (context, state) => const NoTransitionPage(
+        child: SuperAdminBillingScreen(),
       ),
     ),
     GoRoute(
