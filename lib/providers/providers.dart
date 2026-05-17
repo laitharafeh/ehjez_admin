@@ -73,15 +73,11 @@ final currentCourtProvider = FutureProvider<AdminCourt>((ref) async {
   final user = Supabase.instance.client.auth.currentSession?.user;
   if (user == null) throw Exception('Not authenticated');
 
-  // Fast path: user already has a court_managers row (all repeat logins).
-  AdminCourt? court = await CourtService.getCourtForUser(user.id);
-
-  // Slow path: first login — ensure_court_manager hasn't run yet because
-  // the OTP screen navigates away immediately without waiting for it.
-  if (court == null) {
-    await Supabase.instance.client.rpc('ensure_court_manager');
-    court = await CourtService.getCourtForUser(user.id);
-  }
+  // Always run ensure_court_manager so that phone-number reassignments
+  // between courts are picked up immediately on the next login, rather
+  // than staying stuck on the old court indefinitely.
+  await Supabase.instance.client.rpc('ensure_court_manager');
+  final court = await CourtService.getCourtForUser(user.id);
 
   if (court == null) {
     throw Exception('This account is not linked to any court');
