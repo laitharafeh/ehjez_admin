@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../providers/providers.dart';
+import 'super_admin_scaffold.dart';
 
 class SuperAdminHomeScreen extends ConsumerWidget {
   const SuperAdminHomeScreen({super.key});
@@ -12,36 +12,48 @@ class SuperAdminHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final courtsAsync = ref.watch(allCourtsProvider);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF068631),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'ehjez — Admin',
-          style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.5),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign out',
-            onPressed: () async {
-              await Supabase.instance.client.auth.signOut();
-            },
+    return SuperAdminScaffold(
+      activePath: '/super-admin',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Page header
+          Container(
+            height: 64,
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            alignment: Alignment.centerLeft,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                bottom: BorderSide(color: Color(0xFFE8EBE8), width: 1),
+              ),
+            ),
+            child: const Text(
+              'Members',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF111827),
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
+          // Content
+          Expanded(
+            child: courtsAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                child: Text(
+                  'Error loading courts: $e',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+              data: (courts) => courts.isEmpty
+                  ? const Center(child: Text('No courts found.'))
+                  : _CourtsGrid(courts: courts),
+            ),
+          ),
         ],
-      ),
-      body: courtsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text('Error loading courts: $e',
-              style: const TextStyle(color: Colors.red)),
-        ),
-        data: (courts) => courts.isEmpty
-            ? const Center(child: Text('No courts found.'))
-            : _CourtsGrid(courts: courts),
       ),
     );
   }

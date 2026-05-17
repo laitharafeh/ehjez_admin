@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
-
 import 'super_admin_scaffold.dart';
 
-class SuperAdminCourtScreen extends StatelessWidget {
-  final String courtId;
-  const SuperAdminCourtScreen({super.key, required this.courtId});
+class SuperAdminAnalyticsScreen extends StatelessWidget {
+  const SuperAdminAnalyticsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return SuperAdminScaffold(
-      activePath: '/super-admin', // keeps "Members" highlighted
+      activePath: '/super-admin/analytics',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Page header
           Container(
             height: 64,
             padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -25,7 +22,7 @@ class SuperAdminCourtScreen extends StatelessWidget {
               ),
             ),
             child: const Text(
-              'Court Details',
+              'Analytics',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
