@@ -27,7 +27,7 @@ class TournamentsScreen extends ConsumerWidget {
         child: const Icon(Icons.add),
       ),
       body: tournamentsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const _TournamentSkeletonList(),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (tournaments) {
           if (tournaments.isEmpty) {
@@ -93,8 +93,7 @@ class TournamentsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showCreateDialog(
-      BuildContext context, WidgetRef ref, S s) async {
+  Future<void> _showCreateDialog(BuildContext context, WidgetRef ref, S s) async {
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     final maxCtrl = TextEditingController(text: '16');
@@ -286,6 +285,143 @@ class TournamentsScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Skeleton loading ──────────────────────────────────────────────────────────
+
+class _TournamentSkeletonList extends StatelessWidget {
+  const _TournamentSkeletonList();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: 6,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (_, __) => const _TournamentSkeletonItem(),
+    );
+  }
+}
+
+/// Mimics the Card + ListTile layout of a real tournament row:
+/// circle avatar  |  title bar + subtitle bar  |  chevron box
+class _TournamentSkeletonItem extends StatefulWidget {
+  const _TournamentSkeletonItem({super.key});
+
+  @override
+  State<_TournamentSkeletonItem> createState() =>
+      _TournamentSkeletonItemState();
+}
+
+class _TournamentSkeletonItemState extends State<_TournamentSkeletonItem>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) {
+        return Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              // Base grey
+              Container(
+                color: const Color(0xFFEEEEEE),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 16),
+                child: Row(
+                  children: [
+                    // Circle avatar placeholder
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFD8D8D8),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Title + subtitle bars
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: 14,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD8D8D8),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 11,
+                            width: 160,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD8D8D8),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Chevron placeholder
+                    Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD8D8D8),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Shimmer sweep
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment(-1.5 + _ctrl.value * 3, 0),
+                      end: Alignment(-0.8 + _ctrl.value * 3, 0),
+                      colors: const [
+                        Colors.transparent,
+                        Color(0x55FFFFFF),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
