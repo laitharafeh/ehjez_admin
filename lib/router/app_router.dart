@@ -82,25 +82,35 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/super-admin',
-      builder: (context, state) => const SuperAdminHomeScreen(),
+      pageBuilder: (context, state) => const NoTransitionPage(
+        child: SuperAdminHomeScreen(),
+      ),
     ),
     GoRoute(
       path: '/super-admin/courts/:courtId',
-      builder: (context, state) => SuperAdminCourtScreen(
-        courtId: state.pathParameters['courtId']!,
+      pageBuilder: (context, state) => NoTransitionPage(
+        child: SuperAdminCourtScreen(
+          courtId: state.pathParameters['courtId']!,
+        ),
       ),
     ),
     GoRoute(
       path: '/super-admin/reservations',
-      builder: (context, state) => const SuperAdminReservationsScreen(),
+      pageBuilder: (context, state) => const NoTransitionPage(
+        child: SuperAdminReservationsScreen(),
+      ),
     ),
     GoRoute(
       path: '/super-admin/analytics',
-      builder: (context, state) => const SuperAdminAnalyticsScreen(),
+      pageBuilder: (context, state) => const NoTransitionPage(
+        child: SuperAdminAnalyticsScreen(),
+      ),
     ),
     GoRoute(
       path: '/super-admin/settings',
-      builder: (context, state) => const SuperAdminSettingsScreen(),
+      pageBuilder: (context, state) => const NoTransitionPage(
+        child: SuperAdminSettingsScreen(),
+      ),
     ),
     GoRoute(
       path: '/reservations',
