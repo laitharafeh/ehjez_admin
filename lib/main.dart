@@ -25,17 +25,35 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(languageProvider);
-    return MaterialApp.router(
-      title: 'Ehjez Admin',
-      debugShowCheckedModeBanner: false,
-      routerConfig: appRouter,
-      locale: Locale(lang),
-      supportedLocales: const [Locale('en'), Locale('ar')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+    return ScrollConfiguration(
+      // Apply iOS-style bouncing physics app-wide: even when content fits
+      // on screen the user can over-scroll and it springs back elastically.
+      behavior: const _BouncingScrollBehavior(),
+      child: MaterialApp.router(
+        title: 'Ehjez Admin',
+        debugShowCheckedModeBanner: false,
+        routerConfig: appRouter,
+        locale: Locale(lang),
+        supportedLocales: const [Locale('en'), Locale('ar')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+      ),
     );
   }
+}
+
+// Applies BouncingScrollPhysics to every scrollable in the app.
+// AlwaysScrollableScrollPhysics as parent ensures the bounce fires even
+// when the content is shorter than the viewport.
+class _BouncingScrollBehavior extends ScrollBehavior {
+  const _BouncingScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      );
 }
