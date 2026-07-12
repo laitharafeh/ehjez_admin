@@ -155,8 +155,9 @@ class _SportsCourtCalendarState extends State<SportsCourtCalendar> {
         final s2 = S.of(context);
 
         if (result['success'] == true) {
+          final messenger = ScaffoldMessenger.of(context);
           await _fetchReservations();
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             SnackBar(content: Text(s2.reservationAddedSuccess)),
           );
           widget.onBookingAdded?.call();

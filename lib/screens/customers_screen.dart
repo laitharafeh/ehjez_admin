@@ -135,7 +135,7 @@ class _StatsBar extends StatelessWidget {
     );
 
     return Container(
-      color: ehjezGreen.withOpacity(0.08),
+      color: ehjezGreen.withValues(alpha: 0.08),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       child: Row(
         children: [
@@ -180,7 +180,7 @@ class _StatChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: ehjezGreen.withOpacity(0.3)),
+          border: Border.all(color: ehjezGreen.withValues(alpha: 0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,7 +224,6 @@ class _CustomerCard extends StatelessWidget {
     final phone = customer['phone'] as String? ?? '—';
     final bookingCount = (customer['booking_count'] as num?)?.toInt() ?? 0;
     final totalSpend = (customer['total_spend'] as num?)?.toDouble() ?? 0.0;
-    final lastBooking = customer['last_booking'] as String? ?? '';
     final initials =
         name.trim().isNotEmpty
             ? name
@@ -242,7 +241,7 @@ class _CustomerCard extends StatelessWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         leading: CircleAvatar(
-          backgroundColor: ehjezGreen.withOpacity(0.15),
+          backgroundColor: ehjezGreen.withValues(alpha: 0.15),
           child: Text(
             initials,
             style: TextStyle(color: ehjezGreen, fontWeight: FontWeight.bold),
@@ -325,7 +324,7 @@ class _CustomerSkeletonScreen extends StatelessWidget {
 /// Mimics Card + ListTile:
 /// circle  |  name bar + phone bar  |  spend bar + count bar
 class _CustomerSkeletonCard extends StatelessWidget {
-  const _CustomerSkeletonCard({super.key});
+  const _CustomerSkeletonCard();
 
   @override
   Widget build(BuildContext context) {

@@ -57,14 +57,9 @@ class RecurringReservationsScreen extends ConsumerWidget {
   Future<void> _showCreateDialog(
       BuildContext context, WidgetRef ref, S s) async {
     List<String> sizes = [];
-    int maxFields = 1;
     try {
       final rows = await CourtService.getCourtSizes(courtId);
       sizes = rows.map((r) => r['size'] as String).toList();
-      if (sizes.isNotEmpty) {
-        maxFields =
-            (rows.first['number_of_fields'] as num?)?.toInt() ?? 1;
-      }
     } catch (_) {}
 
     if (!context.mounted) return;
@@ -110,7 +105,7 @@ class RecurringReservationsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: selectedSize,
+                  initialValue: selectedSize,
                   decoration:
                       InputDecoration(labelText: s.sizesLabel),
                   items: sizes
@@ -120,8 +115,6 @@ class RecurringReservationsScreen extends ConsumerWidget {
                   onChanged: (v) {
                     setState(() {
                       selectedSize = v ?? selectedSize;
-                      final row = []; // could refetch but keep simple
-                      maxFields = 1;
                     });
                   },
                 ),
@@ -144,7 +137,7 @@ class RecurringReservationsScreen extends ConsumerWidget {
                             const TextInputType.numberWithOptions(
                                 decimal: true),
                         decoration: InputDecoration(
-                            labelText: '${s.priceOneHour}'),
+                            labelText: s.priceOneHour),
                       ),
                     ),
                   ],
@@ -152,7 +145,7 @@ class RecurringReservationsScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 // Day of week
                 DropdownButtonFormField<int>(
-                  value: selectedDay,
+                  initialValue: selectedDay,
                   decoration:
                       InputDecoration(labelText: s.dayOfWeek),
                   items: List.generate(
@@ -181,7 +174,7 @@ class RecurringReservationsScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 // Duration
                 DropdownButtonFormField<int>(
-                  value: selectedDuration,
+                  initialValue: selectedDuration,
                   decoration:
                       InputDecoration(labelText: s.selectDuration),
                   items: [
@@ -352,7 +345,7 @@ class _RecurringCard extends StatelessWidget {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: ehjezGreen.withOpacity(0.12),
+          backgroundColor: ehjezGreen.withValues(alpha: 0.12),
           child:
               Icon(Icons.repeat_outlined, color: ehjezGreen, size: 20),
         ),
@@ -437,7 +430,7 @@ class _RecurringSkeleton extends StatelessWidget {
 
 /// circle  |  title bar + sub-bar 1 + sub-bar 2  |  delete-icon box
 class _RecurringSkeletonItem extends StatelessWidget {
-  const _RecurringSkeletonItem({super.key});
+  const _RecurringSkeletonItem();
 
   @override
   Widget build(BuildContext context) {

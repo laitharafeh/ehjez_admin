@@ -64,7 +64,7 @@ class CustomerDetailScreen extends ConsumerWidget {
         children: [
           // ── Stats header ─────────────────────────────────────────────────
           Container(
-            color: ehjezGreen.withOpacity(0.08),
+            color: ehjezGreen.withValues(alpha: 0.08),
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
@@ -160,7 +160,7 @@ class _InfoTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: ehjezGreen.withOpacity(0.25)),
+          border: Border.all(color: ehjezGreen.withValues(alpha: 0.25)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,7 +225,7 @@ class _BookingRow extends StatelessWidget {
             width: 52,
             padding: const EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(
-              color: ehjezGreen.withOpacity(0.08),
+              color: ehjezGreen.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(

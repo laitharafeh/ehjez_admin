@@ -204,7 +204,7 @@ class _SkeletonGrid extends StatelessWidget {
 /// Square card with a shimmer sweep + a darker bar at the bottom
 /// that mirrors the name label area of the real card.
 class _SkeletonCard extends StatefulWidget {
-  const _SkeletonCard({super.key});
+  const _SkeletonCard();
 
   @override
   State<_SkeletonCard> createState() => _SkeletonCardState();

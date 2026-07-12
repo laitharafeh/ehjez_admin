@@ -202,7 +202,7 @@ class TournamentsScreen extends ConsumerWidget {
                     const Spacer(),
                     Switch(
                       value: isActive,
-                      activeColor: ehjezGreen,
+                      activeThumbColor: ehjezGreen,
                       onChanged: (v) => setState(() => isActive = v),
                     ),
                   ],
@@ -308,7 +308,7 @@ class _TournamentSkeletonList extends StatelessWidget {
 /// Mimics the Card + ListTile layout of a real tournament row:
 /// circle avatar  |  title bar + subtitle bar  |  chevron box
 class _TournamentSkeletonItem extends StatefulWidget {
-  const _TournamentSkeletonItem({super.key});
+  const _TournamentSkeletonItem();
 
   @override
   State<_TournamentSkeletonItem> createState() =>

@@ -527,7 +527,7 @@ class InvoiceGenerator {
     final col3 = allDays.sublist(
         (daysInMonth * 2 / 3).ceil().clamp(0, daysInMonth));
 
-    pw.Widget _col(List<({int day, double revenue, int bookings})> col) {
+    pw.Widget col(List<({int day, double revenue, int bookings})> col) {
       return pw.Expanded(
         child: pw.Table(
           border: pw.TableBorder.all(color: _grey300, width: 0.5),
@@ -568,11 +568,11 @@ class InvoiceGenerator {
     return pw.Row(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        _col(col1),
+        col(col1),
         pw.SizedBox(width: 6),
-        _col(col2),
+        col(col2),
         pw.SizedBox(width: 6),
-        _col(col3),
+        col(col3),
       ],
     );
   }

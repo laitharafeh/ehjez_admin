@@ -39,7 +39,7 @@ class PromoCodesScreen extends ConsumerWidget {
               // Stats strip
               if (codes.isNotEmpty)
                 Container(
-                  color: ehjezGreen.withOpacity(0.07),
+                  color: ehjezGreen.withValues(alpha: 0.07),
                   padding: const EdgeInsets.symmetric(
                       horizontal: 20, vertical: 10),
                   child: Row(
@@ -263,7 +263,7 @@ class PromoCodesScreen extends ConsumerWidget {
                         error = null;
                       });
                       try {
-                        String _fmtDate(DateTime d) =>
+                        String fmtDate(DateTime d) =>
                             '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
                         await PromoService.createCode(
@@ -276,10 +276,10 @@ class PromoCodesScreen extends ConsumerWidget {
                               : int.tryParse(maxUsesCtrl.text.trim()),
                           validFrom: validFrom == null
                               ? null
-                              : _fmtDate(validFrom!),
+                              : fmtDate(validFrom!),
                           validUntil: validUntil == null
                               ? null
-                              : _fmtDate(validUntil!),
+                              : fmtDate(validUntil!),
                         );
                         ref.invalidate(promoCodesProvider(courtId));
                         if (ctx.mounted) Navigator.pop(ctx);
@@ -425,7 +425,7 @@ class _PromoCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -440,7 +440,7 @@ class _PromoCard extends StatelessWidget {
                 // Toggle
                 Switch(
                   value: isActive,
-                  activeColor: ehjezGreen,
+                  activeThumbColor: ehjezGreen,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   onChanged: (val) async {
                     await PromoService.toggleActive(
@@ -661,7 +661,7 @@ class _PromoCodesSkeleton extends StatelessWidget {
 /// ── divider ──
 /// discount value bar + validity bar
 class _PromoCardSkeleton extends StatelessWidget {
-  const _PromoCardSkeleton({super.key});
+  const _PromoCardSkeleton();
 
   @override
   Widget build(BuildContext context) {

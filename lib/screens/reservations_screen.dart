@@ -4,7 +4,6 @@ import 'package:ehjez_admin/services/auth_service.dart';
 import 'package:ehjez_admin/widgets/court_assignment_board.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 class ReservationsScreen extends ConsumerWidget {
   const ReservationsScreen({super.key});

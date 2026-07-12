@@ -102,7 +102,7 @@ class PricingRulesScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 // Size selector
                 DropdownButtonFormField<String>(
-                  value: selectedSize,
+                  initialValue: selectedSize,
                   decoration:
                       InputDecoration(labelText: s.sizesLabel),
                   items: sizes
@@ -147,7 +147,7 @@ class PricingRulesScreen extends ConsumerWidget {
                       return FilterChip(
                         label: Text(s.weekdayShort[i]),
                         selected: selected,
-                        selectedColor: ehjezGreen.withOpacity(0.2),
+                        selectedColor: ehjezGreen.withValues(alpha: 0.2),
                         checkmarkColor: ehjezGreen,
                         onSelected: (_) => setState(() {
                           if (selected) {
@@ -325,7 +325,7 @@ class _RuleCard extends StatelessWidget {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: ehjezGreen.withOpacity(0.12),
+          backgroundColor: ehjezGreen.withValues(alpha: 0.12),
           child: Icon(
             specificDate != null
                 ? Icons.event_outlined
@@ -447,7 +447,7 @@ class _PricingRulesSkeleton extends StatelessWidget {
 /// Card + ListTile skeleton:
 /// circle  |  title bar + sub-bar 1 + sub-bar 2  |  delete-icon box
 class _PricingRuleSkeletonItem extends StatelessWidget {
-  const _PricingRuleSkeletonItem({super.key});
+  const _PricingRuleSkeletonItem();
 
   @override
   Widget build(BuildContext context) {
