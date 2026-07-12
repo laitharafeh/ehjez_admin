@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ehjez_admin/constants.dart';
 import 'package:ehjez_admin/l10n/s.dart';
 import 'package:ehjez_admin/services/auth_service.dart';
@@ -14,10 +16,38 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
+  static const _resendCooldown = 60;
+
   final _otpController = TextEditingController();
   bool _isVerifying = false;
   bool _isResending = false;
   String? _error;
+
+  // Resend cooldown — a code was just sent when this screen opens, so the
+  // countdown starts immediately and restarts after every resend.
+  int _cooldownLeft = _resendCooldown;
+  Timer? _cooldownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCooldown();
+  }
+
+  void _startCooldown() {
+    _cooldownTimer?.cancel();
+    setState(() => _cooldownLeft = _resendCooldown);
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() {
+        _cooldownLeft--;
+        if (_cooldownLeft <= 0) t.cancel();
+      });
+    });
+  }
 
   Future<void> _verify() async {
     final s = S.of(context);
@@ -57,6 +87,7 @@ class _OtpScreenState extends State<OtpScreen> {
     try {
       await AuthService.signInWithOtp(widget.phoneNumber);
       if (!mounted) return;
+      _startCooldown();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(S.of(context).codeResent)),
       );
@@ -70,6 +101,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   void dispose() {
+    _cooldownTimer?.cancel();
     _otpController.dispose();
     super.dispose();
   }
@@ -114,7 +146,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 20,
                         offset: const Offset(0, 4),
                       ),
@@ -204,7 +236,7 @@ class _OtpScreenState extends State<OtpScreen> {
                             backgroundColor: ehjezGreen,
                             foregroundColor: Colors.white,
                             disabledBackgroundColor:
-                                ehjezGreen.withOpacity(0.5),
+                                ehjezGreen.withValues(alpha: 0.5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -243,11 +275,19 @@ class _OtpScreenState extends State<OtpScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed: _isResending ? null : _resend,
+                            onPressed: (_isResending || _cooldownLeft > 0)
+                                ? null
+                                : _resend,
                             child: Text(
-                              _isResending ? s.sending : s.resendCode,
+                              _isResending
+                                  ? s.sending
+                                  : _cooldownLeft > 0
+                                      ? s.resendCodeIn(_cooldownLeft)
+                                      : s.resendCode,
                               style: TextStyle(
-                                color: ehjezGreen,
+                                color: _cooldownLeft > 0
+                                    ? Colors.grey.shade400
+                                    : ehjezGreen,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),

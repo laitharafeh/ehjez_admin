@@ -7,7 +7,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/otp_screen.dart';
 import '../screens/dispatch_screen.dart';
-import '../screens/home_screen.dart';
 import '../screens/super_admin/super_admin_home_screen.dart';
 import '../screens/super_admin/super_admin_court_screen.dart';
 import '../screens/super_admin/super_admin_reservations_screen.dart';
@@ -72,6 +71,9 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/otp',
+      // `extra` is lost on web refresh / direct deep-link — fall back to
+      // /login instead of crashing on a null cast.
+      redirect: (context, state) => state.extra is String ? null : '/login',
       builder: (context, state) => OtpScreen(
         phoneNumber: state.extra as String,
       ),
@@ -160,6 +162,11 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/customers/:courtId/detail',
+      // `extra` is lost on web refresh / direct deep-link — fall back to the
+      // customer list instead of crashing on a null cast.
+      redirect: (context, state) => state.extra is Map<String, dynamic>
+          ? null
+          : '/customers/${state.pathParameters['courtId']}',
       builder: (context, state) => CustomerDetailScreen(
         courtId: state.pathParameters['courtId']!,
         customer: state.extra as Map<String, dynamic>,
