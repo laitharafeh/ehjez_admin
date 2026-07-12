@@ -5,28 +5,26 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 typedef MonthlyRevenue = ({String month, double revenue, int bookings});
 typedef PeakHour = ({int hour, int count});
-typedef WeekdayStats = ({
-  int dayNum,
-  String dayLabel,
-  int bookings,
-  double revenue,
-});
+typedef WeekdayStats =
+    ({int dayNum, String dayLabel, int bookings, double revenue});
 typedef SizeStats = ({String size, int count});
-typedef AnalyticsSummary = ({
-  int totalBookings,
-  double totalRevenue,
-  double totalCommission,
-  double avgBookingValue,
-  int monthBookings,
-  double monthRevenue,
-});
-typedef AnalyticsData = ({
-  List<MonthlyRevenue> monthlyRevenue,
-  List<PeakHour> peakHours,
-  List<WeekdayStats> byWeekday,
-  List<SizeStats> bySize,
-  AnalyticsSummary summary,
-});
+typedef AnalyticsSummary =
+    ({
+      int totalBookings,
+      double totalRevenue,
+      double totalCommission,
+      double avgBookingValue,
+      int monthBookings,
+      double monthRevenue,
+    });
+typedef AnalyticsData =
+    ({
+      List<MonthlyRevenue> monthlyRevenue,
+      List<PeakHour> peakHours,
+      List<WeekdayStats> byWeekday,
+      List<SizeStats> bySize,
+      AnalyticsSummary summary,
+    });
 
 class ReservationService {
   static final _client = Supabase.instance.client;
@@ -59,6 +57,21 @@ class ReservationService {
     await _client.from('reservations').delete().eq('id', id);
   }
 
+  /// Moves a reservation to [newField] via the `change_reservation_field` RPC,
+  /// which re-checks availability server-side (handles races where someone
+  /// booked the target field while the edit dialog was open).
+  /// Returns `{success: bool, reason?/field_number?: ...}`.
+  static Future<Map<String, dynamic>> changeReservationField({
+    required int reservationId,
+    required int newField,
+  }) async {
+    final result = await _client.rpc(
+      'change_reservation_field',
+      params: {'p_reservation_id': reservationId, 'p_new_field': newField},
+    );
+    return Map<String, dynamic>.from(result as Map);
+  }
+
   // ─── Calendar ────────────────────────────────────────────────────────────────
 
   /// Fetches all upcoming reservations (today onwards) for [courtId] + [size].
@@ -87,16 +100,19 @@ class ReservationService {
     required String phone,
     required int price,
   }) async {
-    return await _client.rpc('book_slot', params: {
-      'p_court_id': courtId,
-      'p_date': date,
-      'p_start_time': startTime,
-      'p_duration': duration,
-      'p_size': size,
-      'p_name': name,
-      'p_phone': phone,
-      'p_price': price,
-    });
+    return await _client.rpc(
+      'book_slot',
+      params: {
+        'p_court_id': courtId,
+        'p_date': date,
+        'p_start_time': startTime,
+        'p_duration': duration,
+        'p_size': size,
+        'p_name': name,
+        'p_phone': phone,
+        'p_price': price,
+      },
+    );
   }
 
   // ─── Overlapping page ────────────────────────────────────────────────────────
@@ -178,11 +194,7 @@ class ReservationService {
   ) async {
     final response = await _client.rpc(
       'get_court_monthly_accounting',
-      params: {
-        'p_court_id': courtId,
-        'p_year': year,
-        'p_month': month,
-      },
+      params: {'p_court_id': courtId, 'p_year': year, 'p_month': month},
     );
     return Map<String, dynamic>.from(response as Map);
   }
@@ -195,45 +207,49 @@ class ReservationService {
     String courtId, {
     int months = 6,
   }) async {
-    final raw = await _client.rpc('get_court_analytics', params: {
-      'p_court_id': courtId,
-      'p_months': months,
-    }) as Map<String, dynamic>;
+    final raw =
+        await _client.rpc(
+              'get_court_analytics',
+              params: {'p_court_id': courtId, 'p_months': months},
+            )
+            as Map<String, dynamic>;
 
-    final monthlyRevenue = (raw['monthly_revenue'] as List? ?? [])
-        .cast<Map<String, dynamic>>()
-        .map((e) => (
-              month: e['month'] as String,
-              revenue: (e['revenue'] as num).toDouble(),
-              bookings: e['bookings'] as int,
-            ))
-        .toList();
+    final monthlyRevenue =
+        (raw['monthly_revenue'] as List? ?? [])
+            .cast<Map<String, dynamic>>()
+            .map(
+              (e) => (
+                month: e['month'] as String,
+                revenue: (e['revenue'] as num).toDouble(),
+                bookings: e['bookings'] as int,
+              ),
+            )
+            .toList();
 
-    final peakHours = (raw['peak_hours'] as List? ?? [])
-        .cast<Map<String, dynamic>>()
-        .map((e) => (
-              hour: e['hour'] as int,
-              count: e['count'] as int,
-            ))
-        .toList();
+    final peakHours =
+        (raw['peak_hours'] as List? ?? [])
+            .cast<Map<String, dynamic>>()
+            .map((e) => (hour: e['hour'] as int, count: e['count'] as int))
+            .toList();
 
-    final byWeekday = (raw['by_weekday'] as List? ?? [])
-        .cast<Map<String, dynamic>>()
-        .map((e) => (
-              dayNum: e['day_num'] as int,
-              dayLabel: e['day_label'] as String,
-              bookings: e['bookings'] as int,
-              revenue: (e['revenue'] as num).toDouble(),
-            ))
-        .toList();
+    final byWeekday =
+        (raw['by_weekday'] as List? ?? [])
+            .cast<Map<String, dynamic>>()
+            .map(
+              (e) => (
+                dayNum: e['day_num'] as int,
+                dayLabel: e['day_label'] as String,
+                bookings: e['bookings'] as int,
+                revenue: (e['revenue'] as num).toDouble(),
+              ),
+            )
+            .toList();
 
-    final bySize = (raw['by_size'] as List? ?? [])
-        .cast<Map<String, dynamic>>()
-        .map((e) => (
-              size: e['size'] as String,
-              count: e['count'] as int,
-            ))
-        .toList();
+    final bySize =
+        (raw['by_size'] as List? ?? [])
+            .cast<Map<String, dynamic>>()
+            .map((e) => (size: e['size'] as String, count: e['count'] as int))
+            .toList();
 
     final s = (raw['summary'] as Map<String, dynamic>?) ?? {};
     final summary = (
