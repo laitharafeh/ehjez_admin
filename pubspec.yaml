@@ -45,6 +45,7 @@ dependencies:
   path_provider: ^2.1.5
   share_plus: ^11.0.0
   flutter_riverpod: ^2.6.1
+  image_picker: ^1.1.2
   flutter_web_plugins:
     sdk: flutter
 

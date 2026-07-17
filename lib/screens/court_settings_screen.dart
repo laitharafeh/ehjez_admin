@@ -1,6 +1,3 @@
-// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
-import 'dart:async';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:ehjez_admin/constants.dart';
@@ -12,6 +9,7 @@ import 'package:ehjez_admin/l10n/s.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CourtSettingsScreen extends ConsumerWidget {
   final String courtId;
@@ -168,13 +166,10 @@ class _SettingsFormState extends State<_SettingsForm> {
   }
 
   // ── Image upload ─────────────────────────────────────────────────────────────
-  //
-  // Uses dart:html directly instead of image_picker — more reliable on Flutter
-  // web since we control the file input lifecycle ourselves.
 
   Future<void> _pickAndUploadImage(int slot) async {
-    // 1. Open a native file-input dialog and wait for the user's selection.
-    final picked = await _pickFileWeb();
+    // 1. Open the image picker and wait for the user's selection.
+    final picked = await _pickImage();
     if (picked == null || !mounted) return;
 
     // 2. Show uploading indicator only after a file is actually chosen.
@@ -213,50 +208,15 @@ class _SettingsFormState extends State<_SettingsForm> {
     }
   }
 
-  /// Opens a browser file-input restricted to images and returns the selected
-  /// file's bytes + extension. Returns null if the user cancels.
-  Future<({Uint8List bytes, String ext})?> _pickFileWeb() {
-    final completer = Completer<({Uint8List bytes, String ext})?>();
-
-    final input = html.FileUploadInputElement()..accept = 'image/*';
-
-    // Listen before clicking so the event is always captured.
-    input.onChange.listen((event) {
-      final files = input.files;
-      if (files == null || files.isEmpty) {
-        if (!completer.isCompleted) completer.complete(null);
-        return;
-      }
-      final file = files[0];
-      final reader = html.FileReader();
-
-      reader.onLoad.listen((_) {
-        final result = reader.result;
-        final Uint8List bytes;
-        if (result is Uint8List) {
-          bytes = result;
-        } else if (result is List<int>) {
-          bytes = Uint8List.fromList(result);
-        } else {
-          if (!completer.isCompleted) completer.complete(null);
-          return;
-        }
-        final ext =
-            file.name.contains('.') ? file.name.split('.').last : 'jpg';
-        if (!completer.isCompleted) {
-          completer.complete((bytes: bytes, ext: ext));
-        }
-      });
-
-      reader.onError.listen((_) {
-        if (!completer.isCompleted) completer.complete(null);
-      });
-
-      reader.readAsArrayBuffer(file);
-    });
-
-    input.click();
-    return completer.future;
+  /// Opens the platform image picker (browser file input on web, gallery on
+  /// mobile) and returns the selected file's bytes + extension. Returns null
+  /// if the user cancels.
+  Future<({Uint8List bytes, String ext})?> _pickImage() async {
+    final file = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (file == null) return null;
+    final bytes = await file.readAsBytes();
+    final ext = file.name.contains('.') ? file.name.split('.').last : 'jpg';
+    return (bytes: bytes, ext: ext);
   }
 
   // ── Size management ──────────────────────────────────────────────────────────
@@ -1090,7 +1050,7 @@ class _StaffCardState extends ConsumerState<_StaffCard> {
                   const SizedBox(height: 12),
                   // Role dropdown
                   DropdownButtonFormField<String>(
-                    value: selectedRole,
+                    initialValue: selectedRole,
                     decoration: InputDecoration(
                       labelText: s.staffRole,
                       border: const OutlineInputBorder(),

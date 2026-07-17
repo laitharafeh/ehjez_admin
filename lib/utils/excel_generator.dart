@@ -1,18 +1,19 @@
-// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:convert';
-import 'dart:html' as html;
 
 import 'package:ehjez_admin/providers/providers.dart';
+import 'package:ehjez_admin/utils/csv_save_stub.dart'
+    if (dart.library.html) 'package:ehjez_admin/utils/csv_save_web.dart'
+    if (dart.library.io) 'package:ehjez_admin/utils/csv_save_io.dart';
 import 'package:intl/intl.dart';
 
 /// Generates a multi-section CSV that opens cleanly in Excel / Google Sheets.
 /// Each logical "sheet" is separated by blank lines and a bold section header.
 class ExcelGenerator {
-  static void generateAndDownload({
+  static Future<void> generateAndDownload({
     required MonthlyAccountingData data,
     required int year,
     required int month,
-  }) {
+  }) async {
     final fmt = NumberFormat('#,##0.00');
     final monthName = DateFormat('MMMM yyyy').format(DateTime(year, month));
     final daysInMonth = DateTime(year, month + 1, 0).day;
@@ -200,14 +201,9 @@ class ExcelGenerator {
     final bom = '\uFEFF';
     final csv = bom + lines.join('\n');
     final bytes = utf8.encode(csv);
-    final blob = html.Blob([bytes], 'text/csv;charset=utf-8');
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    html.AnchorElement(href: url)
-      ..setAttribute(
-        'download',
-        'report_${data.courtName.replaceAll(' ', '_')}_${year}_${month.toString().padLeft(2, '0')}.csv',
-      )
-      ..click();
-    html.Url.revokeObjectUrl(url);
+    // Browser download on web, share sheet on mobile (conditional import).
+    final filename =
+        'report_${data.courtName.replaceAll(' ', '_')}_${year}_${month.toString().padLeft(2, '0')}.csv';
+    await saveCsv(bytes, filename);
   }
 }

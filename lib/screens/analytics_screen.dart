@@ -46,15 +46,17 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     return _month.year == now.year && _month.month == now.month;
   }
 
-  void _exportExcel(MonthlyAccountingData data) {
+  Future<void> _exportExcel(MonthlyAccountingData data) async {
     try {
-      ExcelGenerator.generateAndDownload(
+      await ExcelGenerator.generateAndDownload(
           data: data, year: _month.year, month: _month.month);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(S.of(context).excelDownloaded),
         backgroundColor: ehjezGreen,
       ));
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Excel export failed: $e'),
         backgroundColor: Colors.red,
