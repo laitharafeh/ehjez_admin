@@ -14,6 +14,7 @@ class S {
 
   // ── General ────────────────────────────────────────────────────────────────
   String get cancel => _t('Cancel', 'إلغاء');
+  String get privacyPolicy => _t('Privacy Policy', 'سياسة الخصوصية');
   String get confirm => _t('Confirm', 'تأكيد');
   String get ok => _t('OK', 'موافق');
   String get error => _t('Error', 'خطأ');

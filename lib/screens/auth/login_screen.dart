@@ -218,6 +218,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => context.push('/privacy'),
+                  child: Text(
+                    s.privacyPolicy,
+                    style: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

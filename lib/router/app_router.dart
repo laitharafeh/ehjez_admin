@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/otp_screen.dart';
 import '../screens/dispatch_screen.dart';
+import '../screens/privacy_policy_screen.dart';
 import '../screens/super_admin/super_admin_home_screen.dart';
 import '../screens/super_admin/super_admin_court_screen.dart';
 import '../screens/super_admin/super_admin_reservations_screen.dart';
@@ -60,6 +61,10 @@ final appRouter = GoRouter(
     final loc = state.matchedLocation;
     final isAuthRoute = loc == '/login' || loc == '/otp';
 
+    // Publicly reachable without login — the deployed web app's /privacy URL
+    // doubles as the store-listing privacy policy link.
+    if (loc == '/privacy') return null;
+
     if (!isLoggedIn && !isAuthRoute) return '/login';
     if (isLoggedIn && isAuthRoute) return '/';
     return null;
@@ -81,6 +86,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/',
       builder: (context, state) => const DispatchScreen(),
+    ),
+    GoRoute(
+      path: '/privacy',
+      builder: (context, state) => const PrivacyPolicyScreen(),
     ),
     GoRoute(
       path: '/super-admin',
